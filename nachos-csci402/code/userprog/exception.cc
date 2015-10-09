@@ -274,6 +274,7 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_CreateLock:
             DEBUG('a', "CreateLock syscall.\n");
+            rv = CreateLock_sys(machine->ReadRegister(4));
             break;
         case SC_Acquire:
             DEBUG('a', "Acquire syscall.\n");
