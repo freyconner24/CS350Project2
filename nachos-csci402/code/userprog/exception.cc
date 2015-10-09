@@ -24,6 +24,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "custom_syscall.h"
 #include <stdio.h>
 #include <iostream>
 
@@ -268,7 +269,37 @@ void ExceptionHandler(ExceptionType which) {
         case SC_Yield:
             currentThread->Yield();
             break;
-    	}
+        case SC_Exit:
+            currentThread->Yield();
+            break;
+        case SC_CreateLock:
+            DEBUG('a', "CreateLock syscall.\n");
+            break;
+        case SC_Acquire:
+            DEBUG('a', "Acquire syscall.\n");
+            break;
+        case SC_Release:
+            DEBUG('a', "Release syscall.\n");
+            break;
+        case SC_DestroyLock:
+            DEBUG('a', "DestroyLock syscall.\n");
+            break;
+        case SC_CreateCondition:
+            DEBUG('a', "CreateCondition syscall.\n");
+            break;
+        case SC_Wait:
+            DEBUG('a', "Wait syscall.\n");
+            break;
+        case SC_Signal:
+            DEBUG('a', "Signal syscall.\n");
+            break;
+        case SC_Broadcast:
+            DEBUG('a', "Broadcast syscall.\n");
+            break;
+        case SC_DestroyCondition:
+            DEBUG('a', "DestroyCondition syscall.\n");
+            break;
+        }
 
 	// Put in the return value and increment the PC
 	machine->WriteRegister(2,rv);
