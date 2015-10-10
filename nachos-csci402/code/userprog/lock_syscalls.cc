@@ -32,7 +32,7 @@ int CreateLock_sys(int vaddr) {
 void Acquire_sys(int index) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 
-	userLocks[index].userLock->inUse = TRUE;
+	userLocks[index].inUse = TRUE;
 
 	kernelLock->Release();//release kernel lock
 	userLocks[index].userLock->Acquire(); // acquire userlock at index
@@ -41,7 +41,7 @@ void Acquire_sys(int index) {
 void Release_sys(int index) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 
-	userLocks[index].userLock->inUse = FALSE;
+	userLocks[index].inUse = FALSE;
 
 	kernelLock->Release();//release kernel lock
 	userLocks[index].userLock->Release(); // release userlock at index
@@ -52,7 +52,6 @@ void DestroyLock_sys(int index) {
 	userLocks[index].deleteFlag = TRUE;
 	if (userLocks[index].deleteFlag && !userLocks[index].inUse){
 		delete userLocks[index].userLock;
-		userLocks[index] = NULL;
 	}
 
 	kernelLock->Release();//release kernel lock

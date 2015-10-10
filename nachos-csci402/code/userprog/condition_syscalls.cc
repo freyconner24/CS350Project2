@@ -32,7 +32,7 @@ int CreateCondition_sys(int vaddr) {
 void Wait_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 
-	userConds[conditionIndex].userCond->inUse = TRUE;
+	userConds[conditionIndex].inUse = TRUE;
 
 	kernelLock->Release();//release kernel lock
 	userConds[conditionIndex].userCond->Wait(userLocks[lockIndex].userLock); // acquire userlock at index
@@ -41,7 +41,7 @@ void Wait_sys(int lockIndex, int conditionIndex) {
 void Signal_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 
-	userConds[conditionIndex].userCond->inUse = TRUE;
+	userConds[conditionIndex].inUse = TRUE;
 
 	kernelLock->Release();//release kernel lock
 	userConds[conditionIndex].userCond->Signal(userLocks[lockIndex].userLock); // acquire userlock at index
@@ -50,7 +50,7 @@ void Signal_sys(int lockIndex, int conditionIndex) {
 void Broadcast_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 
-	userConds[conditionIndex].userCond->inUse = TRUE;
+	userConds[conditionIndex].inUse = TRUE;
 
 	kernelLock->Release();//release kernel lock
 	userConds[conditionIndex].userCond->Broadcast(userLocks[lockIndex].userLock); // acquire userlock at index
@@ -61,7 +61,6 @@ void DestroyCondition_sys(int index) {
 	userConds[index].deleteFlag = TRUE; // set delete flag to true regardless
 	if (userConds[index].deleteFlag && !userConds[index].inUse){
 		delete userConds[index].userCond;
-		userConds[index] = NULL;
 	}
 	kernelLock->Release();//release kernel lock
 }
