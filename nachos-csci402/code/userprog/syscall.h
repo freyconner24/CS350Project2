@@ -53,6 +53,8 @@
  * from the system call entry point in exception.cc.
  */
 
+int copyin(unsigned int vaddr, int len, char *buf);
+int copyout(unsigned int vaddr, int len, char *buf);
 /* Stop Nachos, and print out performance stats */
 void Halt();		
  

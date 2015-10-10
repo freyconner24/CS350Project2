@@ -6,17 +6,7 @@
 #include <stdio.h>
 #include <iostream>
 
-struct UserLock {
-	bool deleteFlag;
-	Lock userLock;
-	int addrSpace;
-} ;
-UserLock oneUserLock;
-#define BUFFER_SIZE = 32;
-
-
-Lock kernelLock = new Lock("KernelLock");
-int lockCount = 0;
+#define BUFFER_SIZE 32
 
 int CreateLock_sys(int vaddr) {
 	kernelLock->Acquire();
@@ -28,7 +18,7 @@ int CreateLock_sys(int vaddr) {
 
 	userLocks[lockCount].userLock = new Lock(buffer);
 	userLocks[lockCount].deleteFlag = FALSE;
-	userLocks[lockCount].addrSpace = currentThread->space();
+	userLocks[lockCount].addrSpace = currentThread->space->getNumPages();
 
 	int currentLockIndex = lockCount;
 	lockCount++;
