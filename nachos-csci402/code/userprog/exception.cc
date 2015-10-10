@@ -270,7 +270,7 @@ void ExceptionHandler(ExceptionType which) {
             currentThread->Yield();
             break;
         case SC_Exit:
-            currentThread->Yield();
+            currentThread->Finish();
             break;
         case SC_CreateLock:
             DEBUG('a', "CreateLock syscall.\n");
