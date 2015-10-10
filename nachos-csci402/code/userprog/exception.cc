@@ -278,6 +278,7 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Acquire:
             DEBUG('a', "Acquire syscall.\n");
+            rv = Acquire_sys(machine->ReadRegister(4));
             break;
         case SC_Release:
             DEBUG('a', "Release syscall.\n");

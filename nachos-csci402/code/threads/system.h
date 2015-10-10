@@ -18,6 +18,7 @@
 #include "timer.h"
 
 #define MAX_LOCK_COUNT 50
+#define MAX_COND_COUNT 50
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -27,8 +28,16 @@ extern void Cleanup();				// Cleanup, called when
 
 struct UserLock {
 	bool deleteFlag;
+	bool inUse;
 	Lock* userLock;
-	unsigned int addrSpace;
+	AddrSpace* addrSpace;
+};
+
+struct UserCond {
+	bool deleteFlag;
+	bool inUse;
+	Condition* userCond;
+	AddrSpace* addrSpace;
 };
 
 extern Thread *currentThread;			// the thread holding the CPU
@@ -42,8 +51,10 @@ extern Timer *timer;				// the hardware alarm clock
 #include "machine.h"
 extern Machine* machine;	// user program memory and registers
 extern struct UserLock userLocks[MAX_LOCK_COUNT];
+extern struct UserCond userConds[MAX_COND_COUNT];
 extern Lock* kernelLock;
 extern int lockCount;
+extern int condCount;
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 
