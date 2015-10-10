@@ -271,6 +271,7 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Exit:
             currentThread->Finish();
+
             break;
         case SC_CreateLock:
             DEBUG('a', "CreateLock syscall.\n");
@@ -278,28 +279,35 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Acquire:
             DEBUG('a', "Acquire syscall.\n");
-            rv = Acquire_sys(machine->ReadRegister(4));
+            Acquire_sys(machine->ReadRegister(4));
             break;
         case SC_Release:
             DEBUG('a', "Release syscall.\n");
+            Release_sys(machine->ReadRegister(4));
             break;
         case SC_DestroyLock:
             DEBUG('a', "DestroyLock syscall.\n");
+            DestroyLock_sys(machine->ReadRegister(4));
             break;
         case SC_CreateCondition:
             DEBUG('a', "CreateCondition syscall.\n");
+            rv = CreateCondition_sys(machine->ReadRegister(4));
             break;
         case SC_Wait:
             DEBUG('a', "Wait syscall.\n");
+            Wait_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_Signal:
             DEBUG('a', "Signal syscall.\n");
+            Signal_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_Broadcast:
             DEBUG('a', "Broadcast syscall.\n");
+            Broadcast_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_DestroyCondition:
             DEBUG('a', "DestroyCondition syscall.\n");
+            DestroyCondition_sys(machine->ReadRegister(4));
             break;
         }
 
