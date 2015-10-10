@@ -24,7 +24,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
-#include "custom_syscall.h"
+#include "custom_syscalls.h"
 #include <stdio.h>
 #include <iostream>
 

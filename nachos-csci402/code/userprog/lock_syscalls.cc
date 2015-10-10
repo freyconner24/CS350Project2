@@ -2,6 +2,7 @@
 #include "system.h"
 #include "syscall.h"
 #include "custom_syscalls.h"
+#include "synchlist.h"
 #include <stdio.h>
 #include <iostream>
 
@@ -9,8 +10,8 @@ struct UserLock {
 	bool deleteFlag;
 	Lock userLock;
 	int addrSpace;
-} UserLock;
-
+} ;
+UserLock oneUserLock;
 #define BUFFER_SIZE = 32;
 
 
