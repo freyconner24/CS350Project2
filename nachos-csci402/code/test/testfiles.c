@@ -6,18 +6,17 @@
 
 int main() {
   OpenFileId fd;
-  int bytesread;
+  int bytesread, lockNum, condNum;
   char buf[20];
 
-    Create("testfile", 8);
-    fd = Open("testfile", 8);
-
-    Write("testing a write\n", 16, fd );
-    Close(fd);
-
-
-    fd = Open("testfile", 8);
-    bytesread = Read( buf, 100, fd );
-    Write( buf, bytesread, ConsoleOutput );
-    Close(fd);
+ Write("Testing Locks\n", 14, ConsoleOutput);
+ 
+ lockNum = CreateLock("nameLock");
+ Acquire(lockNum);
+ condNum = CreateCondition("someCondition");
+ Signal(lockNum, condNum);
+ Broadcast(lockNum, condNum);
+Release(lockNum);
+DestroyLock(lockNum);
+ Write("Locks complete\n", 15, ConsoleOutput);
 }
