@@ -230,6 +230,14 @@ void Close_Syscall(int fd) {
     }
 }
 
+void kernel_thread(int virtualaddress) {
+    machine->WriteRegister(PCReg, virtualaddress);
+    machine->WriteRegister(NextPCReg, virtualaddress+4);
+    currentThread->space->RestoreState();
+    machine->WriteRegister(StackReg, currentThread->stackTop); // TODO: need to calculate: currentThread->stackTop
+    machine->Run();
+}
+
 void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2); // Which syscall?
     int rv=0; 	// the return value from a syscall
@@ -267,7 +275,20 @@ void ExceptionHandler(ExceptionType which) {
             Close_Syscall(machine->ReadRegister(4));
             break;
         case SC_Yield:
+            DEBUG('a', "Yield syscall.\n");
             currentThread->Yield();
+            break;
+        case SC_Fork:
+            DEBUG('a', "Fork syscall.\n");
+            int virtualAddress = machine->ReadRegister(4);
+            Thread* kernelThread = new Thread("KernelThread");
+            kernelThread->space = currentThread->space;
+            // update process table for multi-programming part
+            kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualaddress);
+            break;
+        case SC_Exec:
+            DEBUG('a', "Exec syscall.\n");
+            
             break;
         case SC_Exit:
             currentThread->Finish();
