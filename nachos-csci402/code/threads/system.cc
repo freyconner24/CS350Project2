@@ -32,8 +32,10 @@ Machine *machine;	// user program memory and registers
 struct UserLock userLocks[MAX_LOCK_COUNT];
 struct UserCond userConds[MAX_COND_COUNT];
 Lock* kernelLock = new Lock("KernelLock");
+struct ThreadManager threadManagers[TEMP_ARRAY_SIZE];
 int lockCount = 0;
 int condCount = 0;
+int threadManagerCount = 0;
 #endif
 
 #ifdef NETWORK

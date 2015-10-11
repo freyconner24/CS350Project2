@@ -1,0 +1,54 @@
+check if numChildThreads of currentThread exists
+if(exists) {
+	while(!(last child)) {
+		currentThread->Sleep();
+	}
+
+	if(currentThread->hasParent()) {
+		currentThread->numChildren--;
+		// wake up parent
+		currentThread->Finish()
+	}
+
+	if(!some process has executed this process by calling exec) {
+		return;
+	}
+
+	tell children I'm gonna finish (by checking process table)
+
+	tell parent that I'm dying
+	remove entry from parent's process table
+
+	if(parent called join on currentThread) {
+		wake parent up (Signal?)
+	} else {
+		remove currentThread from parent process table
+	}
+	
+	--childProcessCounterOfParentProcessTable
+	delete currentThread->space;
+}
+
+------------------------------------------------
+
+Exit
+Needs at least currentThread->Finish()
+Full Axit - 3 Casses
+	- Goal: reclaim whatever resources no longer needed
+	- Memory
+	- Locks (in Airport, don't do destroy because too difficult)
+	- CVs
+Case1: last executing thred in lost process
+	- stop nachos
+	- interrupt->Halt()
+Case 2: A thread in a process; not the last thread
+	- reclaim 8 stack pages - clear - pagetable entry valid
+		* set it to false when clearing
+Case 3: Last executing thread in a process, but not last process
+	- reclaim all memory not reclaimed
+		* same already reclaimed
+		* din't do clear again
+
+	- reclaim all locks and CVs
+
+

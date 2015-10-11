@@ -19,6 +19,7 @@
 
 #define MAX_LOCK_COUNT 50
 #define MAX_COND_COUNT 50
+#define TEMP_ARRAY_SIZE 10000
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -40,6 +41,16 @@ struct UserCond {
 	AddrSpace* addrSpace;
 };
 
+//list of these
+struct ThreadManager {
+	// every time I fork
+	// the forking thread is the parent of the new thread you are forking
+	// create instance of struct every time I fork a thread
+	Thread* parentThread; // check for this
+	Thread* childthreads[TEMP_ARRAY_SIZE]; //childThread->space
+	int childrenCount = 0;
+};
+
 extern Thread *currentThread;			// the thread holding the CPU
 extern Thread *threadToBeDestroyed;  		// the thread that just finished
 extern Scheduler *scheduler;			// the ready list
@@ -52,9 +63,11 @@ extern Timer *timer;				// the hardware alarm clock
 extern Machine* machine;	// user program memory and registers
 extern struct UserLock userLocks[MAX_LOCK_COUNT];
 extern struct UserCond userConds[MAX_COND_COUNT];
+extern struct ThreadManager threadManagers[TEMP_ARRAY_SIZE];
 extern Lock* kernelLock;
 extern int lockCount;
 extern int condCount;
+extern int threadManagerCount;
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

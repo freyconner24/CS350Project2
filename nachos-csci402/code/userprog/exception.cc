@@ -271,7 +271,37 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Exit:
             currentThread->Finish();
+            bool isLastExecutingThread(Thread* tempCurrentThread) {
+                for(int i = 0; i < threadManagerCount; ++i) {
+                    if(threadManagers[i].parentThread == tempCurrentThread) {
+                        if(threadManagers[i].childrenCount == 0) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
 
+            bool isLastProcess() {
+
+            }
+            
+            bool isLastProcess = isLastProcess();
+            bool isLastExecutingThread = isLastExecutingThread();
+            if(isLastProcess && isLastExecutingThread) {
+                - stop nachos
+                interrupt->Halt();
+            } else if(!isLastExecutingThread) {
+                - reclaim 8 stack pages - clear - pagetable entry valid
+                    * set it to false when clearing
+                delete currentThread->space; // ??
+            } else if(!isLastProcess && isLastExecutingThread) {
+                - reclaim all memory not reclaimed
+                    * same already reclaimed
+                    * dont do clear again
+                - reclaim all locks and CVs
+            }
             break;
         case SC_CreateLock:
             DEBUG('a', "CreateLock syscall.\n");
