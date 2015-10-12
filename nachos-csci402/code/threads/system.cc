@@ -34,6 +34,7 @@ struct UserCond userConds[MAX_COND_COUNT];
 Lock* kernelLock = new Lock("KernelLock");
 int lockCount = 0;
 int condCount = 0;
+int processCount = 0;
 #endif
 
 #ifdef NETWORK

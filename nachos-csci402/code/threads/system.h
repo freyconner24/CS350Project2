@@ -55,6 +55,7 @@ extern struct UserCond userConds[MAX_COND_COUNT];
 extern Lock* kernelLock;
 extern int lockCount;
 extern int condCount;
+extern int processCount;
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

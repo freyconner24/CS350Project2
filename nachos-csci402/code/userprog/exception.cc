@@ -238,6 +238,12 @@ void kernel_thread(int virtualaddress) {
     machine->Run();
 }
 
+void exec_thread() {
+    currentThread->space->InitRegisters();
+    currentThread->space->RestoreState();
+    machine->Run();
+}
+
 void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2); // Which syscall?
     int rv=0; 	// the return value from a syscall
@@ -283,12 +289,28 @@ void ExceptionHandler(ExceptionType which) {
             int virtualAddress = machine->ReadRegister(4);
             Thread* kernelThread = new Thread("KernelThread");
             kernelThread->space = currentThread->space;
+            // TODO: maybe need to give space id
             // update process table for multi-programming part
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualaddress);
             break;
         case SC_Exec:
             DEBUG('a', "Exec syscall.\n");
-            
+            int virtualAddress = machine->ReadRegister(4);
+            char* nameOfProcess = new char[32 + 1];
+            if(copyin(virtualaddress, 32, nameOfProcess) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
+                DEBUG('a', "Copyin failed.\n");
+            }
+            nameOfProcess[32] = '\0';
+            OpenFile *f = fileSystem->Open(nameOfProcess);
+            AddrSpace* as = new AddrSpace(f); // Create new addrespace for this executable file
+            Thread* t = new Thread("ExecThread");
+            t->space = as; //Allocate the space created to this thread's space
+
+            t->Fork((VoidFunctionPtr)exec_thread, 0);
+            //Update the process table and related data structures
+            space->id = processCount;
+            ++processCount;
+            rv = space->id;
             break;
         case SC_Exit:
             currentThread->Finish();
