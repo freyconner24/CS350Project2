@@ -244,6 +244,12 @@ void exec_thread() {
     machine->Run();
 }
 
+void updateParentAndChildThreads(Thread* parentThread, Thread* childThread) {
+    parentThread->childThreads[parentThread->childCount] = childThread;
+    parentThread->childCount += 1;
+    childThread->parentThread = parentThread;
+}
+
 void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2); // Which syscall?
     int rv=0; 	// the return value from a syscall
@@ -289,8 +295,15 @@ void ExceptionHandler(ExceptionType which) {
             int virtualAddress = machine->ReadRegister(4);
             Thread* kernelThread = new Thread("KernelThread");
             kernelThread->space = currentThread->space;
+            updateParentAndChildThreads(currentThread, kernelThread);
             // TODO: maybe need to give space id
+            processTable->processes[processCount] = new Process(space);
+            int threadCount = processTable->processes[processCount]->threadCount;
+            processTable->processes[processCount]->threadCount += 1;
+            processTable->processes[processCount]->childThreads[threadCount] = kernelThread;
             // update process table for multi-programming part
+            process->processes[processCount]->processId = processCount;
+            ++processCount;
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualaddress);
             break;
         case SC_Exec:
@@ -301,16 +314,19 @@ void ExceptionHandler(ExceptionType which) {
                 DEBUG('a', "Copyin failed.\n");
             }
             nameOfProcess[32] = '\0';
-            OpenFile *f = fileSystem->Open(nameOfProcess);
-            AddrSpace* as = new AddrSpace(f); // Create new addrespace for this executable file
-            Thread* t = new Thread("ExecThread");
-            t->space = as; //Allocate the space created to this thread's space
-
-            t->Fork((VoidFunctionPtr)exec_thread, 0);
-            //Update the process table and related data structures
+            OpenFile *filePointer = fileSystem->Open(nameOfProcess);
+            AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
+            Thread* newThread = new Thread("ExecThread");
+            newThread->space = as; //Allocate the space created to this thread's space
+            
             space->id = processCount;
+            process->processes[processCount]->processId = processCount;
             ++processCount;
             rv = space->id;
+            
+            updateParentAndChildThreads(currentThread, kernelThread);
+            //Update the process table and related data structures
+            newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
         case SC_Exit:
             currentThread->Finish();

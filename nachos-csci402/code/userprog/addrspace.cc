@@ -245,3 +245,12 @@ void AddrSpace::RestoreState()
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 }
+
+void AddrSpace::NewPageTable(){
+    TranslationEntry* newTable = new TranslationEntry [numPages+8];
+    for(int i = 0; i < numPages; ++i){
+        newTable
+    }
+
+    numPages = numPages+8;
+}

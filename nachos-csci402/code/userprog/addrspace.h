@@ -22,6 +22,9 @@
 #define MaxOpenFiles 256
 #define MaxChildSpaces 256
 
+#define MAX_THREADS_IN_PROCESS 100
+#define MAX_PROCESSES_IN_TABLE 100
+
 class AddrSpace {
   public:
     AddrSpace(OpenFile *executable);	// Create an address space,
@@ -37,11 +40,31 @@ class AddrSpace {
     Table fileTable;			// Table of openfiles
     unsigned int getNumPages() { return numPages; }
     int id;
+    void NewPageTable(); 
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
+};
+
+class Process {
+    public:
+        Process(AddrSpace* space);
+        ~Process();
+        int processId;
+        AddrSpace* space;
+        Thread* childThreads[MAX_THREADS_IN_PROCESS];
+        int threadCount;
+};
+
+class ProcessTable{
+    public:
+        ProcessTable();
+        ~ProcessTable();
+        Process* processes[MAX_PROCESSES_IN_TABLE];
+        bool removeProcess();
+        bool addProcess();
 };
 
 #endif // ADDRSPACE_H
