@@ -16,9 +16,11 @@
 #include "synchlist.h"
 #include "stats.h"
 #include "timer.h"
+#include "syscall.h"
 
 #define MAX_LOCK_COUNT 50
 #define MAX_COND_COUNT 50
+#define ADDRESS_SPACE_COUNT 50
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -40,6 +42,20 @@ struct UserCond {
 	AddrSpace* addrSpace;
 };
 
+class ProcessEntry {
+	public:
+		AddrSpace* space;
+		SpaceId spaceId;
+		int sleepThreadCount;
+		int awakeThreadCount;
+
+};
+
+class ProcessTable {
+	public:
+		ProcessEntry* processEntries[ADDRESS_SPACE_COUNT];
+};
+
 extern Thread *currentThread;			// the thread holding the CPU
 extern Thread *threadToBeDestroyed;  		// the thread that just finished
 extern Scheduler *scheduler;			// the ready list
@@ -56,6 +72,8 @@ extern Lock* kernelLock;
 extern int lockCount;
 extern int condCount;
 extern int processCount;
+extern BitMap* bitmap;
+extern ProcessTable* processTable;
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

@@ -166,7 +166,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 
 // zero out the entire address space, to zero the unitialized data segment
 // and the stack segment
-    bzero(machine->mainMemory, size);
+    //bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
@@ -181,6 +181,16 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
+
+    processCount++;
+    machine->pageTable = pageTable;
+    machine->pageTableSize = numPages;
+    processEntry = new ProcessEntry();
+    processEntry->space = this;
+    processEntry->spaceId = processCount;
+    processEntry->sleepThreadCount = 0;
+    processEntry->awakeThreadCount = 1;
+    processTable->processEntries[processCount] = processEntry;
     kernelLock->Release();
 }
 
@@ -194,6 +204,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 AddrSpace::~AddrSpace()
 {
     delete pageTable;
+    delete processEntry;
 }
 
 //----------------------------------------------------------------------

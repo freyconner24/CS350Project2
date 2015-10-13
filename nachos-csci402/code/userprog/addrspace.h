@@ -25,6 +25,8 @@
 #define MAX_THREADS_IN_PROCESS 100
 #define MAX_PROCESSES_IN_TABLE 100
 
+class ProcessEntry;
+
 class AddrSpace {
   public:
     AddrSpace(OpenFile *executable);	// Create an address space,
@@ -39,13 +41,19 @@ class AddrSpace {
     void RestoreState();		// info on a context switch
     Table fileTable;			// Table of openfiles
     unsigned int getNumPages() { return numPages; }
+    ProcessEntry* getProcessEntry() { return processEntry; }
     int id;
     void NewPageTable();
+
+    int currentPCReg_space;
+    int nextPCReg_space;
+    int stackReg_space;
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual
 					// address space
+    ProcessEntry* processEntry;
 };
 
 #endif // ADDRSPACE_H

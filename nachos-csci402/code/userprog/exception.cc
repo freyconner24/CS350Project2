@@ -234,7 +234,7 @@ void kernel_thread(int virtualAddress) {
     machine->WriteRegister(PCReg, virtualAddress);
     machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
-    // machine->WriteRegister(StackReg, currentThread->stackTop); // TODO: need to calculate: currentThread->stackTop
+    machine->WriteRegister(StackReg, currentThread->space->getNumPages() * PageSize - 16); // TODO: need to calculate: currentThread->stackTop
     machine->Run();
 }
 
@@ -306,12 +306,8 @@ void ExceptionHandler(ExceptionType which) {
             AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
             Thread* newThread = new Thread("ExecThread");
             newThread->space = as; //Allocate the space created to this thread's space
-
             newThread->space->id = processCount;
-            ++processCount;
             rv = newThread->space->id;
-
-            //Update the process table and related data structures
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
         case SC_Exit:

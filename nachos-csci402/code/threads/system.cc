@@ -35,6 +35,8 @@ Lock* kernelLock = new Lock("KernelLock");
 int lockCount = 0;
 int condCount = 0;
 int processCount = 0;
+BitMap* bitmap = new BitMap(NumPhysPages);
+ProcessTable* processTable = new ProcessTable();
 #endif
 
 #ifdef NETWORK
