@@ -1,5 +1,5 @@
-// addrspace.h 
-//	Data structures to keep track of executing user programs 
+// addrspace.h
+//	Data structures to keep track of executing user programs
 //	(address spaces).
 //
 //	For now, we don't keep any information about address spaces.
@@ -7,7 +7,7 @@
 //	executing the user program (see thread.h).
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #ifndef ADDRSPACE_H
@@ -40,31 +40,12 @@ class AddrSpace {
     Table fileTable;			// Table of openfiles
     unsigned int getNumPages() { return numPages; }
     int id;
-    void NewPageTable(); 
+    void NewPageTable();
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
-    unsigned int numPages;		// Number of pages in the virtual 
+    unsigned int numPages;		// Number of pages in the virtual
 					// address space
-};
-
-class Process {
-    public:
-        Process(AddrSpace* space);
-        ~Process();
-        int processId;
-        AddrSpace* space;
-        Thread* childThreads[MAX_THREADS_IN_PROCESS];
-        int threadCount;
-};
-
-class ProcessTable{
-    public:
-        ProcessTable();
-        ~ProcessTable();
-        Process* processes[MAX_PROCESSES_IN_TABLE];
-        bool removeProcess();
-        bool addProcess();
 };
 
 #endif // ADDRSPACE_H

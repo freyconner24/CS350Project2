@@ -118,6 +118,7 @@ SwapHeader (NoffHeader *noffH)
 //----------------------------------------------------------------------
 
 AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
+    kernelLock->Acquire();
     NoffHeader noffH;
     unsigned int i, size;
 
@@ -144,11 +145,17 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n",
 					numPages, size);
+    int tempIndex = 0;
 // first, set up the translation
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
+      tempIndex = bitmap->Find();
+      if (tempIndex == -1){
+        DEBUG('g', "PAGETABLE TOO BIG");
+        break;
+      }
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
+	pageTable[i].physicalPage = tempIndex;
 	pageTable[i].valid = TRUE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
@@ -174,7 +181,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
-
+    kernelLock->Release();
 }
 
 //----------------------------------------------------------------------
@@ -250,7 +257,7 @@ void AddrSpace::NewPageTable(){
     kernelLock->Acquire();
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     pageTable = new TranslationEntry[numPages];
-    for (i = 0; i < numPages; i++) {
+    for (int i = 0; i < numPages; i++) {
     	newTable[i].virtualPage = pageTable[i].virtualPage;	// for now, virtual page # = phys page #
     	newTable[i].physicalPage = pageTable[i].physicalPage;
     	newTable[i].valid = pageTable[i].valid;
@@ -261,9 +268,10 @@ void AddrSpace::NewPageTable(){
     					// pages to be read-only
     }
     int tempIndex = 0;
-    for (i = numPages; i < numPages+8; i++) {
+    for (int i = numPages; i < numPages+8; i++) {
       tempIndex = bitmap->Find();
       if (tempIndex == -1){
+        DEBUG('g', "PAGETABLE TOO BIG");
         break;
       }
     	newTable[i].virtualPage = i;	// for now, virtual page # = phys page #
@@ -278,7 +286,7 @@ void AddrSpace::NewPageTable(){
     delete[] pageTable;
     pageTable = newTable;
     numPages = numPages+8;
-    machine->pageTable = pagetable;
+    machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 
     kernelLock->Release();

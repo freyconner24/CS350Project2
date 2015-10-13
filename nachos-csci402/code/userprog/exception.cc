@@ -1,4 +1,4 @@
-// exception.cc 
+// exception.cc
 //	Entry point into the Nachos kernel from user programs.
 //	There are two kinds of things that can cause control to
 //	transfer back to here from user code:
@@ -9,7 +9,7 @@
 //
 //	exceptions -- The user code does something that the CPU can't handle.
 //	For instance, accessing memory that doesn't exist, arithmetic errors,
-//	etc.  
+//	etc.
 //
 //	Interrupts (which can also cause control to transfer from user
 //	code into the Nachos kernel) are handled elsewhere.
@@ -18,7 +18,7 @@
 // Everything else core dumps.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
@@ -42,10 +42,10 @@ int copyin(unsigned int vaddr, int len, char *buf) {
       result = machine->ReadMem( vaddr, 1, paddr );
       while(!result) { // FALL 09 CHANGES
    			result = machine->ReadMem( vaddr, 1, paddr ); // FALL 09 CHANGES: TO HANDLE PAGE FAULT IN THE ReadMem SYS CALL
-      }	
-      
+      }
+
       buf[n++] = *paddr;
-     
+
       if ( !result ) {
         //translation failed
         return -1;
@@ -144,12 +144,12 @@ void Write_Syscall(unsigned int vaddr, int len, int id) {
     // console exists, create one. For disk files, the file is looked
     // up in the current address space's open file table and used as
     // the target of the write.
-    
+
     char *buf;		// Kernel buffer for output
     OpenFile *f;	// Open file for output
 
     if ( id == ConsoleInput) return;
-    
+
     if ( !(buf = new char[len]) ) {
     	printf("%s","Error allocating kernel buffer for write!\n");
     	return;
@@ -187,7 +187,7 @@ int Read_Syscall(unsigned int vaddr, int len, int id) {
     OpenFile *f;	// Open file for output
 
     if ( id == ConsoleOutput) return -1;
-    
+
     if ( !(buf = new char[len]) ) {
     	printf("%s","Error allocating kernel buffer in Read\n");
     	return -1;
@@ -230,11 +230,11 @@ void Close_Syscall(int fd) {
     }
 }
 
-void kernel_thread(int virtualaddress) {
-    machine->WriteRegister(PCReg, virtualaddress);
-    machine->WriteRegister(NextPCReg, virtualaddress+4);
+void kernel_thread(int virtualAddress) {
+    machine->WriteRegister(PCReg, virtualAddress);
+    machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
-    machine->WriteRegister(StackReg, currentThread->stackTop); // TODO: need to calculate: currentThread->stackTop
+    // machine->WriteRegister(StackReg, currentThread->stackTop); // TODO: need to calculate: currentThread->stackTop
     machine->Run();
 }
 
@@ -244,15 +244,10 @@ void exec_thread() {
     machine->Run();
 }
 
-void updateParentAndChildThreads(Thread* parentThread, Thread* childThread) {
-    parentThread->childThreads[parentThread->childCount] = childThread;
-    parentThread->childCount += 1;
-    childThread->parentThread = parentThread;
-}
-
 void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2); // Which syscall?
     int rv=0; 	// the return value from a syscall
+    int virtualAddress = 0;
 
     if ( which == SyscallException ) {
     	switch (type) {
@@ -292,25 +287,17 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Fork:
             DEBUG('a', "Fork syscall.\n");
-            int virtualAddress = machine->ReadRegister(4);
+            virtualAddress = machine->ReadRegister(4);
             Thread* kernelThread = new Thread("KernelThread");
             kernelThread->space = currentThread->space;
-            updateParentAndChildThreads(currentThread, kernelThread);
             // TODO: maybe need to give space id
-            processTable->processes[processCount] = new Process(space);
-            int threadCount = processTable->processes[processCount]->threadCount;
-            processTable->processes[processCount]->threadCount += 1;
-            processTable->processes[processCount]->childThreads[threadCount] = kernelThread;
-            // update process table for multi-programming part
-            process->processes[processCount]->processId = processCount;
-            ++processCount;
-            kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualaddress);
+            kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualAddress);
             break;
         case SC_Exec:
             DEBUG('a', "Exec syscall.\n");
-            int virtualAddress = machine->ReadRegister(4);
+            virtualAddress = machine->ReadRegister(4);
             char* nameOfProcess = new char[32 + 1];
-            if(copyin(virtualaddress, 32, nameOfProcess) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
+            if(copyin(virtualAddress, 32, nameOfProcess) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
                 DEBUG('a', "Copyin failed.\n");
             }
             nameOfProcess[32] = '\0';
@@ -318,13 +305,11 @@ void ExceptionHandler(ExceptionType which) {
             AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
             Thread* newThread = new Thread("ExecThread");
             newThread->space = as; //Allocate the space created to this thread's space
-            
-            space->id = processCount;
-            process->processes[processCount]->processId = processCount;
+
+            newThread->space->id = processCount;
             ++processCount;
-            rv = space->id;
-            
-            updateParentAndChildThreads(currentThread, kernelThread);
+            rv = newThread->space->id;
+
             //Update the process table and related data structures
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
