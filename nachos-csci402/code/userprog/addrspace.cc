@@ -260,10 +260,14 @@ void AddrSpace::NewPageTable(){
     					// a separate page, we could set its
     					// pages to be read-only
     }
-
+    int tempIndex = 0;
     for (i = numPages; i < numPages+8; i++) {
+      tempIndex = bitmap->Find();
+      if (tempIndex == -1){
+        break;
+      }
     	newTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-    	newTable[i].physicalPage = i;
+    	newTable[i].physicalPage = tempIndex;
     	newTable[i].valid = TRUE;
     	newTable[i].use = FALSE;
     	newTable[i].dirty = FALSE;
@@ -271,7 +275,11 @@ void AddrSpace::NewPageTable(){
     					// a separate page, we could set its
     					// pages to be read-only
     }
-    delete pageTable;
+    delete[] pageTable;
+    pageTable = newTable;
     numPages = numPages+8;
+    machine->pageTable = pagetable;
+    machine->pageTableSize = numPages;
+
     kernelLock->Release();
 }
