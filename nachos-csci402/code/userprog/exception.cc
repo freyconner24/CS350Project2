@@ -300,8 +300,9 @@ void ExceptionHandler(ExceptionType which) {
                 // release lock
             }
             
-            bool isLastProcess = isLastProcess();
-            bool isLastExecutingThread = isLastExecutingThread();
+            Thread* tempCurrentThread = currentThread;
+            bool isLastProcess = isLastProcess(tempCurrentThread);
+            bool isLastExecutingThread = isLastExecutingThread(tempCurrentThread);
             if(isLastProcess && isLastExecutingThread) {
                 // stop nachos
                 currentThread->Finish();
