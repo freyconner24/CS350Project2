@@ -291,6 +291,7 @@ void ExceptionHandler(ExceptionType which) {
             Thread* kernelThread = new Thread("KernelThread");
             kernelThread->space = currentThread->space;
             // TODO: maybe need to give space id
+            kernelThread->space->NewPageTable();
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualAddress);
             break;
         case SC_Exec:
