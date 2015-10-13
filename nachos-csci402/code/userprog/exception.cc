@@ -270,33 +270,49 @@ void ExceptionHandler(ExceptionType which) {
             currentThread->Yield();
             break;
         case SC_Exit:
-            currentThread->Finish();
             bool isLastExecutingThread(Thread* tempCurrentThread) {
-                for(int i = 0; i < threadManagerCount; ++i) {
-                    if(threadManagers[i].parentThread == tempCurrentThread) {
-                        if(threadManagers[i].childrenCount == 0) {
+                // get lock
+                for(int i = 1; i <= processCount; ++i) {
+                    if(processTable->processEntry[i]->space == tempCurrentThread->space) {
+                        if(processTable->processEntry[i]->awakeThreads == 1 &&
+                           processTable->processEntry[i]->sleepingThreads == 0) {
                             return true;
                         } else {
                             return false;
                         }
                     }
                 }
+                // release lock
             }
 
-            bool isLastProcess() {
-
+            bool isLastProcess(Thread* tempCurrentThread) {
+                // get lock
+                for(int i = 1; i <= processCount; ++i) {
+                    if(processTable->processEntry[i]->space == tempCurrentThread->space) {
+                        if(processTable->activeProcesses == 1 &&
+                           processTable->sleepingProcesses == 0) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                // release lock
             }
             
             bool isLastProcess = isLastProcess();
             bool isLastExecutingThread = isLastExecutingThread();
             if(isLastProcess && isLastExecutingThread) {
-                - stop nachos
+                // stop nachos
+                currentThread->Finish();
                 interrupt->Halt();
             } else if(!isLastExecutingThread) {
                 - reclaim 8 stack pages - clear - pagetable entry valid
                     * set it to false when clearing
                 delete currentThread->space; // ??
             } else if(!isLastProcess && isLastExecutingThread) {
+                currentThread->Finish();
+                processTable
                 - reclaim all memory not reclaimed
                     * same already reclaimed
                     * dont do clear again
