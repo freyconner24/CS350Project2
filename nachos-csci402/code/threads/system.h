@@ -48,12 +48,16 @@ class ProcessEntry {
 		SpaceId spaceId;
 		int sleepThreadCount;
 		int awakeThreadCount;
-
+		int stackLocations[ADDRESS_SPACE_COUNT];
 };
 
 class ProcessTable {
 	public:
+		ProcessTable() {
+			runningProcessCount = 0;
+		}
 		ProcessEntry* processEntries[ADDRESS_SPACE_COUNT];
+		int runningProcessCount;
 };
 
 extern Thread *currentThread;			// the thread holding the CPU
@@ -63,17 +67,19 @@ extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
 
-#ifdef USER_PROGRAM
-#include "machine.h"
-extern Machine* machine;	// user program memory and registers
 extern struct UserLock userLocks[MAX_LOCK_COUNT];
 extern struct UserCond userConds[MAX_COND_COUNT];
 extern Lock* kernelLock;
 extern int lockCount;
 extern int condCount;
 extern int processCount;
+extern int totalThreadCount;
 extern BitMap* bitmap;
 extern ProcessTable* processTable;
+
+#ifdef USER_PROGRAM
+#include "machine.h"
+extern Machine* machine;	// user program memory and registers
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

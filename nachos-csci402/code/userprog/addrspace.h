@@ -42,7 +42,8 @@ class AddrSpace {
     Table fileTable;			// Table of openfiles
     unsigned int getNumPages() { return numPages; }
     ProcessEntry* getProcessEntry() { return processEntry; }
-    int id;
+    int processId;
+    int spaceId;
     void NewPageTable();
 
     int currentPCReg_space;
