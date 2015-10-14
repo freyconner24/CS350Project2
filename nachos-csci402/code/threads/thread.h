@@ -106,6 +106,8 @@ class Thread {
     Thread* parentThread;
     int childCount;
 
+    int id;
+
   private:
     // some of the private data for this class is listed above
     

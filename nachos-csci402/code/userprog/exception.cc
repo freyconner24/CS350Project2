@@ -21,6 +21,10 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
+// in test::: setenv PATH ../gnu/:$PATH
+// in userprog::: nachos -x ../test/testfiles
+
+
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
@@ -235,6 +239,7 @@ void kernel_thread(int virtualAddress) {
     machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
     machine->WriteRegister(StackReg, currentThread->space->getNumPages() * PageSize - 16); // TODO: need to calculate: currentThread->stackTop
+    processTable->processEntries[processCount]->stackLocations[currentThread->id] = currentThread->space->getNumPages();
     machine->Run();
 }
 
@@ -242,6 +247,28 @@ void exec_thread() {
     currentThread->space->InitRegisters();
     currentThread->space->RestoreState();
     machine->Run();
+}
+
+bool isLastExecutingThread(Thread* tempCurrentThread) {
+    if(processTable->processEntries[tempCurrentThread->space->processId]->awakeThreadCount == 1 &&
+       processTable->processEntries[tempCurrentThread->space->processId]->sleepThreadCount == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// check before I do acquire if the lock is busy then the thread needs to go to sleep
+// beofre I call acquire I need to know if the thread needs to go to sleep
+// when it comes out of acquire reverse the counts
+// when it gets the lock, it gets awake
+
+bool isLastProcess(Thread* tempCurrentThread) {
+    if(processTable->runningProcessCount == 1) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void ExceptionHandler(ExceptionType which) {
@@ -306,13 +333,34 @@ void ExceptionHandler(ExceptionType which) {
             AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
             Thread* newThread = new Thread("ExecThread");
             newThread->space = as; //Allocate the space created to this thread's space
-            newThread->space->id = processCount;
-            rv = newThread->space->id;
+            newThread->space->spaceId = processCount;
+            rv = newThread->space->spaceId;
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
         case SC_Exit:
+            bool isLastProcessVar = isLastProcess(currentThread);
+            bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
+            if(isLastProcessVar && isLastExecutingThreadVar) {
+                // stop nachos
+                interrupt->Halt();
+            } else if(!isLastExecutingThreadVar) {
+                int pageIndex = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id];
+                bitmap->Clear(pageIndex); //need processCount and processIndex
+                //- reclaim 8 stack pages - clear - pagetable entry valid
+                //* set it to false when clearing
+                machine->pageTable[pageIndex].valid = TRUE;
+                machine->pageTable[pageIndex].use = FALSE;
+                machine->pageTable[pageIndex].dirty = FALSE;
+                machine->pageTable[pageIndex].readOnly = FALSE;
+                delete currentThread->space; // ??
+            } else if(!isLastProcessVar && isLastExecutingThreadVar) {
+                /*processTable
+                - reclaim all memory not reclaimed
+                    * same already reclaimed
+                    * dont do clear again
+                - reclaim all locks and CVs*/
+            }
             currentThread->Finish();
-
             break;
         case SC_CreateLock:
             DEBUG('a', "CreateLock syscall.\n");

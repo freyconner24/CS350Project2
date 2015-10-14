@@ -40,6 +40,8 @@ Thread::Thread(char* threadName)
     status = JUST_CREATED;
     parentThread = NULL;
     childCount = 0;
+    id = totalThreadCount;
+    totalThreadCount++;
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
