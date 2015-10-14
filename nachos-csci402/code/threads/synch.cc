@@ -116,6 +116,22 @@ Lock::~Lock()
     delete waitQueue;
 }
 
+void updateProcessThreadCounts(int processId, UpadateState updateState) {
+    switch(updateState) {
+        case SLEEP: 
+            processTable->processEntries[processId]->awakeThreadCount -= 1;
+            processTable->processEntries[processId]->sleepThreadCount += 1;
+            break;
+        case AWAKE:
+            processTable->processEntries[processId]->awakeThreadCount += 1;
+            processTable->processEntries[processId]->sleepThreadCount -= 1; 
+            break;
+        case FINISH:
+            processTable->processEntries[processId]->awakeThreadCount -= 1;
+            break;
+    }
+} 
+
 void Lock::Acquire()
 {
     IntStatus oldLevel = interrupt->SetLevel(IntOff); //disable interrupts
@@ -129,12 +145,14 @@ void Lock::Acquire()
     if(lockStatus == FREE) //lock is available
     {
         //I can have the lock
+        updateProcessThreadCounts(currentThread->space->processId, AWAKE);
         lockStatus = BUSY; //make state BUSY
         lockOwner = currentThread; //make myself the owner
     }
     else //lock is busy
     {
         waitQueue->Append(currentThread); //Put current thread on the lock’s waitQueue
+        updateProcessThreadCounts(currentThread->space->processId, SLEEP);
         currentThread->Sleep();
     }
 
@@ -155,6 +173,7 @@ void Lock::Release()
     {
         Thread* thread = (Thread*)waitQueue->Remove(); //remove 1 waiting thread
         lockOwner = thread; //make them lock owner
+        updateProcessThreadCounts(thread->space->processId, AWAKE);
         scheduler->ReadyToRun(thread); //puts a thread at the back of the
                              //readyQueue in the ready state
     }
@@ -209,6 +228,7 @@ void Condition::Wait(Lock* conditionLock)
     }
     //OK to wait
     waitQueue->Append(currentThread);//Hung: add myself to Condition Variable waitQueue
+    updateProcessThreadCounts(currentThread->space->processId, SLEEP);
     conditionLock->Release();
     currentThread->Sleep(); //currentThread is put on the waitQueue
     conditionLock->Acquire();
@@ -233,6 +253,8 @@ void Condition::Signal(Lock* conditionLock)
 
     //Wake up one waiting thread
     Thread* thread = (Thread*)waitQueue->Remove();//Remove one thread from waitQueue
+    updateProcessThreadCounts(thread->space->processId, AWAKE);
+
     scheduler->ReadyToRun(thread); //Put on readyQueue
 
     if(waitQueue->IsEmpty()) //waitQueue is empty

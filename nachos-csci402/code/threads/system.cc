@@ -19,6 +19,16 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
+struct UserLock userLocks[MAX_LOCK_COUNT];
+struct UserCond userConds[MAX_COND_COUNT];
+Lock* kernelLock;
+int lockCount;
+int condCount;
+int processCount;
+int totalThreadCount;
+BitMap* bitmap;
+ProcessTable* processTable;
+
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
@@ -29,14 +39,6 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
-struct UserLock userLocks[MAX_LOCK_COUNT];
-struct UserCond userConds[MAX_COND_COUNT];
-Lock* kernelLock = new Lock("KernelLock");
-int lockCount = 0;
-int condCount = 0;
-int processCount = 0;
-BitMap* bitmap = new BitMap(NumPhysPages);
-ProcessTable* processTable = new ProcessTable();
 #endif
 
 #ifdef NETWORK
@@ -135,6 +137,15 @@ Initialize(int argc, char **argv)
 	    argCount = 2;
 	}
 #endif
+    userLocks[MAX_LOCK_COUNT];
+    userConds[MAX_COND_COUNT];
+    kernelLock = new Lock("KernelLock");
+    lockCount = 0;
+    condCount = 0;
+    processCount = 0;
+    totalThreadCount = 0;
+    bitmap = new BitMap(NumPhysPages);
+    processTable = new ProcessTable();
     }
 
     DebugInit(debugArgs);			// initialize DEBUG messages
