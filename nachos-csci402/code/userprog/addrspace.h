@@ -44,7 +44,7 @@ class AddrSpace {
     ProcessEntry* getProcessEntry() { return processEntry; }
     int processId;
     int spaceId;
-    void NewPageTable();
+    int NewPageTable();
 
     int currentPCReg_space;
     int nextPCReg_space;

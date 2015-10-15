@@ -36,9 +36,6 @@
 // and some other thread might have called P or V, so the true value might
 // now be different.
 
-enum UpadateState {SLEEP, AWAKE, FINISH};
-void updateProcessThreadCounts(int processId, UpadateState updateState);
-
 class Semaphore {
   public:
     Semaphore(char* debugName, int initialValue);    // set initial value
@@ -82,6 +79,7 @@ class Lock {
     void Print();
     enum LockStatus {FREE, BUSY};
     LockStatus lockStatus;
+    bool waitQueueIsEmpty() {return waitQueue->IsEmpty();}
   private:
     char* name;                // for debugging
     // plus some other stuff you'll need to define

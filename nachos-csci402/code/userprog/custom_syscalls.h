@@ -3,6 +3,9 @@
 
 #include "copyright.h"
 
+enum UpadateState {SLEEP, AWAKE, FINISH};
+
+void updateProcessThreadCounts(AddrSpace* addrSpace, UpadateState updateState);
 
 int CreateLock_sys(int vaddr);
 void Acquire_sys(int lockIndex);
