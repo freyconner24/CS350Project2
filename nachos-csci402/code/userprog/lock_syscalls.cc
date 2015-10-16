@@ -38,6 +38,10 @@ void Acquire_sys(int index) {
 	printf("Lock  number %d  and name %s is acquired by %s \n", index, userLocks[index].userLock->getName(), currentThread->getName());
 	userLocks[index].inUse = TRUE;
  //TODO: race condition?
+	Lock* userLock = userLocks[index].userLock;
+	if(userLock->lockStatus != userLock->FREE) {
+		updateProcessThreadCounts(currentThread->space, SLEEP);
+	}
 	kernelLock->Release();//release kernel lock
 	userLocks[index].userLock->Acquire(); // acquire userlock at index
 }
@@ -46,6 +50,10 @@ void Release_sys(int index) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 	printf("Lock  number %d  and name %s is released by %s \n", index, userLocks[index].userLock->getName(), currentThread->getName());
 	userLocks[index].inUse = FALSE;
+
+	if(!userLocks[index].userLock->waitQueueIsEmpty()) {
+		updateProcessThreadCounts(currentThread->space, AWAKE);
+	}
 
 	kernelLock->Release();//release kernel lock
 	userLocks[index].userLock->Release(); // release userlock at index

@@ -102,11 +102,8 @@ class Thread {
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
 
-    Thread* childrenThreads[1000];
-    Thread* parentThread;
-    int childCount;
-
     int id;
+    int stackLocations[1000];
 
   private:
     // some of the private data for this class is listed above

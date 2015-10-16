@@ -38,6 +38,7 @@ void Wait_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Release();//release kernel lock
 	printf("Condition  number %d, name %s is waited on by %s \n", conditionIndex, userConds[conditionIndex].userCond->getName(), currentThread->getName());
 
+	updateProcessThreadCounts(currentThread->space, SLEEP);
 	userConds[conditionIndex].userCond->Wait(userLocks[lockIndex].userLock); // acquire userlock at index
 }
 
@@ -49,6 +50,9 @@ void Signal_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Release();//release kernel lock
 	printf("Condition  number %d, name %s is signalled by %s \n", conditionIndex, userConds[conditionIndex].userCond->getName(), currentThread->getName());
 
+	if(!userLocks[lockIndex].userLock->waitQueueIsEmpty()) {
+		updateProcessThreadCounts(currentThread->space, AWAKE);
+	}
 	userConds[conditionIndex].userCond->Signal(userLocks[lockIndex].userLock); // acquire userlock at index
 }
 

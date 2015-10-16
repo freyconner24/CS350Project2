@@ -162,8 +162,9 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
 					// a separate page, we could set its
 					// pages to be read-only
-        executable->ReadAt(&(machine->mainMemory[pageTable[i].virtualPage]),
-            tempIndex * PageSize, 40 + pageTable[i].virtualPage * PageSize);
+        executable->ReadAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]),
+            PageSize, 40 + pageTable[i].virtualPage * PageSize);
+        //where we want to read it to, how much do we want to copy, where we want to read it from
 
     }
 
@@ -188,6 +189,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     processCount++;
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+    
     processEntry = new ProcessEntry();
     processEntry->space = this;
     processEntry->spaceId = processCount;
@@ -268,7 +270,7 @@ void AddrSpace::RestoreState()
     machine->pageTableSize = numPages;
 }
 
-void AddrSpace::NewPageTable(){
+int AddrSpace::NewPageTable(){
     kernelLock->Acquire();
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     pageTable = new TranslationEntry[numPages];
@@ -305,4 +307,5 @@ void AddrSpace::NewPageTable(){
     machine->pageTableSize = numPages;
 
     kernelLock->Release();
+    return numPages;
 }

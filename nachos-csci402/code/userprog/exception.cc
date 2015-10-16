@@ -85,6 +85,29 @@ int copyout(unsigned int vaddr, int len, char *buf) {
     return n;
 }
 
+void updateProcessThreadCounts(AddrSpace* addrSpace, UpadateState updateState) {
+    if(addrSpace == NULL) {
+        printf("%s","--------------- AddressSpace is NULL!\n");
+        return;
+    }
+
+    int processId = addrSpace->processId;
+
+    switch(updateState) {
+        case SLEEP: 
+            processTable->processEntries[processId]->awakeThreadCount -= 1;
+            processTable->processEntries[processId]->sleepThreadCount += 1;
+            break;
+        case AWAKE:
+            processTable->processEntries[processId]->awakeThreadCount += 1;
+            processTable->processEntries[processId]->sleepThreadCount -= 1; 
+            break;
+        case FINISH:
+            processTable->processEntries[processId]->awakeThreadCount -= 1;
+            break;
+    }
+}
+
 void Create_Syscall(unsigned int vaddr, int len) {
     // Create the file with the name in the user buffer pointed to by
     // vaddr.  The file name is at most MAXFILENAME chars long.  No
@@ -238,8 +261,9 @@ void kernel_thread(int virtualAddress) {
     machine->WriteRegister(PCReg, virtualAddress);
     machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
-    machine->WriteRegister(StackReg, currentThread->space->getNumPages() * PageSize - 16); // TODO: need to calculate: currentThread->stackTop
-    processTable->processEntries[processCount]->stackLocations[currentThread->id] = currentThread->space->getNumPages();
+    int numPages = processTable->processEntries[processCount]->stackLocations[currentThread->id];
+    machine->WriteRegister(StackReg, numPages * PageSize - 16); // TODO: need to calculate: currentThread->stackTop
+    printf("numPages: %d // should be 1024 bytes apart", numPages);
     machine->Run();
 }
 
@@ -318,7 +342,7 @@ void ExceptionHandler(ExceptionType which) {
             Thread* kernelThread = new Thread("KernelThread");
             kernelThread->space = currentThread->space;
             // TODO: maybe need to give space id
-            kernelThread->space->NewPageTable();
+            processTable->processEntries[processCount]->stackLocations[kernelThread->id] = kernelThread->space->NewPageTable();
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualAddress);
             break;
         case SC_Exec:
@@ -343,22 +367,29 @@ void ExceptionHandler(ExceptionType which) {
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
                 interrupt->Halt();
-            } else if(!isLastExecutingThreadVar) {
-                int pageIndex = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id];
-                bitmap->Clear(pageIndex); //need processCount and processIndex
-                //- reclaim 8 stack pages - clear - pagetable entry valid
-                //* set it to false when clearing
-                machine->pageTable[pageIndex].valid = TRUE;
-                machine->pageTable[pageIndex].use = FALSE;
-                machine->pageTable[pageIndex].dirty = FALSE;
-                machine->pageTable[pageIndex].readOnly = FALSE;
-                delete currentThread->space; // ??
+            } else if(!isLastExecutingThreadVar) { // for every page that belongs to that thread's stack
+                int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id];
+                for(int i = numPages - 8; i < numPages; ++i) {
+                    machine->pageTable[i].valid = FALSE;
+                    machine->pageTable[i].use = FALSE;
+                    machine->pageTable[i].dirty = FALSE;
+                    machine->pageTable[i].readOnly = FALSE;
+                    bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
+                }
             } else if(!isLastProcessVar && isLastExecutingThreadVar) {
-                /*processTable
+                /*iterate entire page 
                 - reclaim all memory not reclaimed
-                    * same already reclaimed
+                    * some already reclaimed
                     * dont do clear again
                 - reclaim all locks and CVs*/
+                    //if the addr space matches the space of lock and cv
+                    // delete lock and cv and set addrspace to null
+                for(int i = 0; i < machine->pageTableSize; ++i) {
+                    if(machine->pageTable[i].valid == TRUE) {
+                        machine->pageTable[i].valid = FALSE;
+                        bitmap->Clear(machine->pageTable[i].physicalPage);
+                    }
+                }
             }
             currentThread->Finish();
             break;
