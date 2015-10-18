@@ -133,10 +133,12 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size ;
+    cout << "AddrSpace::AddrSpace() sizeOfExecutable: " << size << endl;
     numPages = divRoundUp(size, PageSize) + divRoundUp(UserStackSize,PageSize);
-                                                // we need to increase the size
+    cout << "AddrSpace::AddrSpace() numPages: " << numPages << endl;
+                                                    // we need to increase the size
 						// to leave room for the stack
-    size = numPages * PageSize;
+    //size = numPages * PageSize;
 
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
@@ -149,6 +151,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 // first, set up the translation
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
+        cout << "AddrSpace::numPage for(...): " << i << endl;
         tempIndex = bitmap->Find();
         if (tempIndex == -1){
             DEBUG('g', "PAGETABLE TOO BIG");
@@ -191,6 +194,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     machine->pageTableSize = numPages;
 
     processEntry = new ProcessEntry();
+
     processEntry->space = this;
     processEntry->spaceId = processCount;
     processEntry->sleepThreadCount = 0;
@@ -210,7 +214,6 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 AddrSpace::~AddrSpace()
 {
     delete pageTable;
-    delete processEntry;
 }
 
 //----------------------------------------------------------------------
