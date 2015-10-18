@@ -358,13 +358,15 @@ void ExceptionHandler(ExceptionType which) {
             kernelLock->Release();
             break;
         case SC_Fork:
+            kernelLock->Acquire();
             DEBUG('a', "Fork syscall.\n");
-            cout << "Befor: " << totalThreadCount << endl;
+            cout << "Before: " << totalThreadCount << endl;
             virtualAddress = machine->ReadRegister(4);
             cout << "Exception::virtualAddress: " << virtualAddress << endl;
             Thread* kernelThread = new Thread("KernelThread");
             cout << "After: " << totalThreadCount << endl;
             kernelThread->space = currentThread->space;
+            ++(currentThread->space->threadCount);
             // TODO: maybe need to give space id
             cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
             cout << "kernelThread->space->processId: " << kernelThread->space->processId << endl;
@@ -377,6 +379,7 @@ void ExceptionHandler(ExceptionType which) {
             int decode = virtualAddress * 100 + kernelThread->id;
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, decode);
             cout << "After KernelThread" << endl;
+            kernelLock->Release();
             break;
         case SC_Exec:
             DEBUG('a', "Exec syscall.\n");
@@ -395,12 +398,14 @@ void ExceptionHandler(ExceptionType which) {
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
         case SC_Exit:
+            kernelLock->Acquire();
+            cout << "----------------------- EXIT SYSCALL ------------------------------" << endl;
             bool isLastProcessVar = isLastProcess();
-            cout << "EXIT" << endl;
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
             cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
+                DEBUG('a', "Last process and last thread, stopping program.\n");
                 interrupt->Halt();
             } else if(!isLastProcessVar && isLastExecutingThreadVar) {
               // for every page that belongs to that thread's stack
@@ -412,7 +417,9 @@ void ExceptionHandler(ExceptionType which) {
                       machine->pageTable[i].readOnly = FALSE;
                       bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
                   }*/
-                  processTable[currentThread->space->spaceId] = NULL;
+                  DEBUG('a', "Not last process and last thread, deleting process.\n");
+                  delete processTable->processEntries[currentThread->space->spaceId];
+                  processTable->processEntries[currentThread->space->spaceId] = NULL;
                   delete currentThread->space;
                   processTable->runningProcessCount -= 1;
             }else if(!isLastExecutingThreadVar) {
@@ -423,8 +430,12 @@ void ExceptionHandler(ExceptionType which) {
               - reclaim all locks and CVs*/
                   //if the addr space matches the space of lock and cv
                   // delete lock and cv and set addrspace to null
-              currentThread->space->DeleteCurrentThread();
+
+                  DEBUG('a', "Not last process and not last thread, deleting thread.\n");
+              //currentThread->space->DeleteCurrentThread();
+              //TODO differentiate between main and other threads and fork threads
             }
+            kernelLock->Release();
             currentThread->Finish();
             break;
         case SC_CreateLock:
@@ -464,7 +475,6 @@ void ExceptionHandler(ExceptionType which) {
             DestroyCondition_sys(machine->ReadRegister(4));
             break;
         }
-
 	// Put in the return value and increment the PC
 	machine->WriteRegister(2,rv);
 	machine->WriteRegister(PrevPCReg,machine->ReadRegister(PCReg));

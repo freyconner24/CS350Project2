@@ -119,6 +119,7 @@ SwapHeader (NoffHeader *noffH)
 
 AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     kernelLock->Acquire();
+    ++processTable->runningProcessCount;
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 0;
