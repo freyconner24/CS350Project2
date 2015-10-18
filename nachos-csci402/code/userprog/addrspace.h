@@ -45,16 +45,19 @@ class AddrSpace {
     int processId;
     int spaceId;
     int NewPageTable();
+    void DeleteCurrentThread();
 
     int currentPCReg_space;
     int nextPCReg_space;
     int stackReg_space;
+    int threadCount;
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual
 					// address space
     ProcessEntry* processEntry;
+
 };
 
 #endif // ADDRSPACE_H

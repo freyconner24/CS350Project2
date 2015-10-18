@@ -94,13 +94,13 @@ void updateProcessThreadCounts(AddrSpace* addrSpace, UpadateState updateState) {
     int processId = addrSpace->processId;
 
     switch(updateState) {
-        case SLEEP: 
+        case SLEEP:
             processTable->processEntries[processId]->awakeThreadCount -= 1;
             processTable->processEntries[processId]->sleepThreadCount += 1;
             break;
         case AWAKE:
             processTable->processEntries[processId]->awakeThreadCount += 1;
-            processTable->processEntries[processId]->sleepThreadCount -= 1; 
+            processTable->processEntries[processId]->sleepThreadCount -= 1;
             break;
         case FINISH:
             processTable->processEntries[processId]->awakeThreadCount -= 1;
@@ -274,12 +274,13 @@ void exec_thread() {
 }
 
 bool isLastExecutingThread(Thread* tempCurrentThread) {
-    if(processTable->processEntries[tempCurrentThread->space->processId]->awakeThreadCount == 1 &&
+    /*if(processTable->processEntries[tempCurrentThread->space->processId]->awakeThreadCount == 1 &&
        processTable->processEntries[tempCurrentThread->space->processId]->sleepThreadCount == 0) {
-        return true;
-    } else {
-        return false;
+        return true;*/
+    if (tempCurrentThread->space->threadCount == 0){
+      return true;
     }
+    return false;
 }
 
 // check before I do acquire if the lock is busy then the thread needs to go to sleep
@@ -287,7 +288,7 @@ bool isLastExecutingThread(Thread* tempCurrentThread) {
 // when it comes out of acquire reverse the counts
 // when it gets the lock, it gets awake
 
-bool isLastProcess(Thread* tempCurrentThread) {
+bool isLastProcess() {
     if(processTable->runningProcessCount == 1) {
         return true;
     } else {
@@ -362,12 +363,21 @@ void ExceptionHandler(ExceptionType which) {
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
         case SC_Exit:
-            bool isLastProcessVar = isLastProcess(currentThread);
+            bool isLastProcessVar = isLastProcess();
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
                 interrupt->Halt();
-            } else if(!isLastExecutingThreadVar) { // for every page that belongs to that thread's stack
+            } else if(!isLastProcessVar && isLastExecutingThreadVar) {
+                /*iterate entire page
+                - reclaim all memory not reclaimed
+                    * some already reclaimed
+                    * dont do clear again
+                - reclaim all locks and CVs*/
+                    //if the addr space matches the space of lock and cv
+                    // delete lock and cv and set addrspace to null
+                currentThread->space->DeleteCurrentThread();
+            }else if(!isLastExecutingThreadVar) { // for every page that belongs to that thread's stack
                 int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id];
                 for(int i = numPages - 8; i < numPages; ++i) {
                     machine->pageTable[i].valid = FALSE;
@@ -375,20 +385,6 @@ void ExceptionHandler(ExceptionType which) {
                     machine->pageTable[i].dirty = FALSE;
                     machine->pageTable[i].readOnly = FALSE;
                     bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
-                }
-            } else if(!isLastProcessVar && isLastExecutingThreadVar) {
-                /*iterate entire page 
-                - reclaim all memory not reclaimed
-                    * some already reclaimed
-                    * dont do clear again
-                - reclaim all locks and CVs*/
-                    //if the addr space matches the space of lock and cv
-                    // delete lock and cv and set addrspace to null
-                for(int i = 0; i < machine->pageTableSize; ++i) {
-                    if(machine->pageTable[i].valid == TRUE) {
-                        machine->pageTable[i].valid = FALSE;
-                        bitmap->Clear(machine->pageTable[i].physicalPage);
-                    }
                 }
             }
             currentThread->Finish();

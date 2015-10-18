@@ -121,7 +121,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     kernelLock->Acquire();
     NoffHeader noffH;
     unsigned int i, size;
-
+    threadCount = 0;
     // Don't allocate the input or output to disk files
     fileTable.Put(0);
     fileTable.Put(0);
@@ -189,7 +189,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     processCount++;
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
-    
+
     processEntry = new ProcessEntry();
     processEntry->space = this;
     processEntry->spaceId = processCount;
@@ -273,7 +273,6 @@ void AddrSpace::RestoreState()
 int AddrSpace::NewPageTable(){
     kernelLock->Acquire();
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
-    pageTable = new TranslationEntry[numPages];
     for (int i = 0; i < numPages; i++) {
     	newTable[i].virtualPage = pageTable[i].virtualPage;	// for now, virtual page # = phys page #
     	newTable[i].physicalPage = pageTable[i].physicalPage;
@@ -305,7 +304,19 @@ int AddrSpace::NewPageTable(){
     numPages = numPages+8;
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+    machine->WriteRegister(StackReg, numPages * PageSize - 16);
 
     kernelLock->Release();
     return numPages;
+}
+
+void AddrSpace::DeleteCurrentThread(){
+  --threadCount;
+  int j = processTable->processEntries[processCount]->stackLocations[currentThread->id];
+  for (int i = j; i < UserStackSize/ PageSize; ++i){
+    bitmap->Clear(i);
+  }
+  for (int i = j; i < UserStackSize/ PageSize; ++i){
+    pageTable[i].valid = FALSE;
+  }
 }
