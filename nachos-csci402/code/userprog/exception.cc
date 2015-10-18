@@ -22,6 +22,7 @@
 // of liability and disclaimer of warranty provisions.
 
 // in test::: setenv PATH ../gnu/:$PATH
+// cd ../test/; setenv PATH ../gnu/:$PATH; cd ../userprog/
 // in userprog::: nachos -x ../test/testfiles
 
 
@@ -257,13 +258,20 @@ void Close_Syscall(int fd) {
     }
 }
 
-void kernel_thread(int virtualAddress) {
+void kernel_thread(int decode) {
+    cout << "-------- launching KernelThread --------" << endl;
+    int virtualAddress = decode / 100;
+    int kernelThreadId = decode - virtualAddress * 100;
     machine->WriteRegister(PCReg, virtualAddress);
     machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
-    int numPages = processTable->processEntries[processCount]->stackLocations[currentThread->id];
-    machine->WriteRegister(StackReg, numPages * PageSize - 16); // TODO: need to calculate: currentThread->stackTop
-    printf("numPages: %d // should be 1024 bytes apart", numPages);
+    cout << "kernelThread->id: " << kernelThreadId << endl;
+    cout << "currentThread->id: " << currentThread->id << endl;
+    cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
+    int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThreadId];
+    machine->WriteRegister(StackReg, numPages * PageSize - 16 ); // TODO: need to calculate: currentThread->stackTop
+    
+    cout << "numPages: " << numPages << " // should be 1024 bytes apart" << endl;
     machine->Run();
 }
 
@@ -274,8 +282,11 @@ void exec_thread() {
 }
 
 bool isLastExecutingThread(Thread* tempCurrentThread) {
-    if(processTable->processEntries[tempCurrentThread->space->processId]->awakeThreadCount == 1 &&
-       processTable->processEntries[tempCurrentThread->space->processId]->sleepThreadCount == 0) {
+    ProcessEntry* pe = processTable->processEntries[tempCurrentThread->space->processId];
+    cout << "awake: " << pe->awakeThreadCount << endl;
+    cout << "sleep: " << pe->sleepThreadCount << endl;
+    if(pe->awakeThreadCount == 1 &&
+       pe->sleepThreadCount == 0) {
         return true;
     } else {
         return false;
@@ -334,16 +345,40 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Yield:
             DEBUG('a', "Yield syscall.\n");
+            printf("YIELD IS CALLED\n");
+            kernelLock->Acquire();
+            ProcessEntry* processEntry = processTable->processEntries[currentThread->space->processId];
+            processEntry->sleepThreadCount += 1;
+            processEntry->awakeThreadCount -= 1;
+            kernelLock->Release();
+            
             currentThread->Yield();
+
+            kernelLock->Acquire();
+            processEntry->sleepThreadCount -= 1;
+            processEntry->awakeThreadCount += 1;
+            kernelLock->Release();
             break;
         case SC_Fork:
             DEBUG('a', "Fork syscall.\n");
+            cout << "Befor: " << totalThreadCount << endl;
             virtualAddress = machine->ReadRegister(4);
+            cout << "Exception::virtualAddress: " << virtualAddress << endl;
             Thread* kernelThread = new Thread("KernelThread");
+            cout << "After: " << totalThreadCount << endl;
             kernelThread->space = currentThread->space;
             // TODO: maybe need to give space id
-            processTable->processEntries[processCount]->stackLocations[kernelThread->id] = kernelThread->space->NewPageTable();
-            kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualAddress);
+            cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
+            cout << "kernelThread->space->processId: " << kernelThread->space->processId << endl;
+            int numPagesOfNewPageTable = kernelThread->space->NewPageTable();
+            cout << "numPagesOfNewPageTable: " << numPagesOfNewPageTable << endl;
+            cout << "kernelThread->id: " << kernelThread->id << endl;
+            cout << "currentThread->id: " << currentThread->id << endl;
+            processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] = numPagesOfNewPageTable;
+            cout << "Before KernelThread" << endl;
+            int decode = virtualAddress * 100 + kernelThread->id;
+            kernelThread->Fork((VoidFunctionPtr)kernel_thread, decode);
+            cout << "After KernelThread" << endl;
             break;
         case SC_Exec:
             DEBUG('a', "Exec syscall.\n");
@@ -362,8 +397,10 @@ void ExceptionHandler(ExceptionType which) {
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
             break;
         case SC_Exit:
+            cout << "EXIT" << endl;
             bool isLastProcessVar = isLastProcess(currentThread);
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
+            cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
                 interrupt->Halt();
@@ -390,6 +427,7 @@ void ExceptionHandler(ExceptionType which) {
                         bitmap->Clear(machine->pageTable[i].physicalPage);
                     }
                 }
+                processTable->runningProcessCount -= 1;
             }
             currentThread->Finish();
             break;
@@ -438,7 +476,7 @@ void ExceptionHandler(ExceptionType which) {
 	machine->WriteRegister(NextPCReg,machine->ReadRegister(PCReg)+4);
 	return;
     } else {
-      cout<<"Unexpected user mode exception - which:"<<which<<"  type:"<< type<<endl;
+cout<<"Unexpected user mode exception - which:"<<which<<"  type:"<< type<< " in " << currentThread->getName() << endl;
       interrupt->Halt();
     }
 }

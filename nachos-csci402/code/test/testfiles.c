@@ -14,7 +14,7 @@ int main() {
 	int bytesread, lockNum, condNum;
 	char buf[20];
 
-	Write("Testing Locks\n", 14, ConsoleOutput);
+	/*Write("Testing Locks\n", 14, ConsoleOutput);
 
 	lockNum = CreateLock("nameLock");
 	Acquire(lockNum);
@@ -24,5 +24,7 @@ int main() {
 	Release(lockNum);
 	DestroyLock(lockNum);
 	Write("Locks complete\n", 15, ConsoleOutput);
+	*/
+	Fork(helloWorld);
 /*	Exec('halt');*/
 }

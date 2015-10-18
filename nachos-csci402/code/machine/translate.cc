@@ -96,6 +96,8 @@ Machine::ReadMem(int addr, int size, int *value)
     
     exception = Translate(addr, &physicalAddress, size, FALSE);
     if (exception != NoException) {
+    
+    DEBUG('a', "\tRaising exception in ReadMem \n");
 	machine->RaiseException(exception, addr);
 	return FALSE;
     }
@@ -150,6 +152,8 @@ Machine::WriteMem(int addr, int size, int value)
 
     exception = Translate(addr, &physicalAddress, size, TRUE);
     if (exception != NoException) {
+
+    DEBUG('a', "\tRaising exception in WriteMEM \n");
 	machine->RaiseException(exception, addr);
 	return FALSE;
     }
@@ -220,12 +224,19 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     
     if (tlb == NULL) {		// => page table => vpn is index into table
 	if (vpn >= pageTableSize) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+	    DEBUG('a', "vpn >= pageTableSize::virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
 	} else if (!pageTable[vpn].valid) {
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
+	    DEBUG('a', "!pageTable[vpn].valid::virtual page # %d too large for page table size %d::vpn == %d!\n", 
+			virtAddr, pageTableSize, vpn);
+
+      for(int kk = 0; kk < pageTableSize; kk++){
+
+        DEBUG('a', " PageTable virtual address: %d, physical address  %d!  isValid: %d\n",
+        pageTable[kk].virtualPage, pageTable[kk].physicalPage, pageTable[kk].valid);
+
+      }
 	    return PageFaultException;
 	}
 	entry = &pageTable[vpn];
