@@ -30,9 +30,10 @@ int main() {
 /*	Exec('halt');*/
 
 	Write("Forking helloWorld\n", 19, ConsoleOutput);
+	Yield();
 	Fork(helloWorld);
 
-	/*	Fork(helloWorld);
+		Fork(helloWorld);
 			Fork(helloWorld);
 				Fork(helloWorld);
 					Fork(helloWorld);
@@ -42,7 +43,7 @@ int main() {
 									Fork(helloWorld);
 										Fork(helloWorld);
 	Fork(helloWorld);
-	*/
+	
 	Write("Finshing testfiles.c\n", 21, ConsoleOutput);
-
+	Exit(0);
 }

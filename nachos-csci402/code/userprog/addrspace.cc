@@ -123,7 +123,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     processTable->runningProcessCount++;
     NoffHeader noffH;
     unsigned int i, size;
-    threadCount = 0;
+    threadCount = 1;
     // Don't allocate the input or output to disk files
     fileTable.Put(0);
     fileTable.Put(0);
@@ -206,8 +206,9 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     processEntry->awakeThreadCount = 1;
     processTable->processEntries[processCount] = processEntry;
     processId = processCount;
-    processTable->processEntries[processId]->stackLocations[currentThread->id] = divRoundUp(size, PageSize);
-    cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << endl;
+    StackTopForMain =  divRoundUp(size, PageSize);
+    processTable->processEntries[processId]->stackLocations[currentThread->id] = StackTopForMain; //Assigns arbitrarily to main for every exec
+    cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << ", ThreadName: " << currentThread->getName() << endl;
     interrupt->SetLevel(oldLevel);
 
 }
@@ -284,7 +285,7 @@ void AddrSpace::RestoreState()
 int AddrSpace::NewPageTable(){
     //TODO: pageTable lock;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    threadCount++;
+    //threadCount++;
     cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     for (int i = 0; i < numPages; i++) {
@@ -315,6 +316,7 @@ int AddrSpace::NewPageTable(){
     }
     delete[] pageTable;
     pageTable = newTable;
+    RestoreState();
     numPages = numPages+8;
     int tempNum = numPages - 8; // TODO: FIX
     // machine->pageTable = pageTable;

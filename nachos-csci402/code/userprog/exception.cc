@@ -274,7 +274,6 @@ void kernel_thread(int decode) {
     // cout << "currentThread->id: " << currentThread->id << endl;
     // cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
     // int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThreadId];
-    int numPages = currentThread->space->getNumPages();
     int stackRegForNewStack = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id] * PageSize + UserStackSize - 16;
     // machine->WriteRegister(StackReg, numPages * PageSize - 16 ); // TODO: need to calculate: currentThread->stackTop
     machine->WriteRegister(StackReg, stackRegForNewStack ); // TODO: need to calculate: currentThread->stackTop
@@ -285,7 +284,7 @@ void kernel_thread(int decode) {
     machine->Run();
 }
 
-void exec_thread() {
+void exec_thread(int someIntThatIsEqualToZero) {
     kernelLock->Acquire();
     currentThread->space->InitRegisters();
     currentThread->space->RestoreState();
@@ -417,7 +416,11 @@ void ExceptionHandler(ExceptionType which) {
             if (filePointer){ // check if pointer is not null
               AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
               Thread* newThread = new Thread("ExecThread");
+
               newThread->space = as; //Allocate the space created to this thread's space
+              processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id] = as->StackTopForMain;
+              cout << "Start stack location for Exec_thread: " << processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id]<< endl;
+
               rv = newThread->space->spaceId;
               newThread->Fork((VoidFunctionPtr)exec_thread, 0);
               kernelLock->Release();
@@ -431,7 +434,7 @@ void ExceptionHandler(ExceptionType which) {
             kernelLock->Acquire();
             cout << "----------------------- EXIT SYSCALL ------------------------------" << endl;
             cout << "Current thread: "<< currentThread->getName() << ", currentThread ProcessID: "<< currentThread->space->processId << endl;
-            cout << "Number of threads for this process" << currentThread->space->threadCount << endl;
+            cout << "Number of threads for this process: " << currentThread->space->threadCount << endl;
             bool isLastProcessVar = isLastProcess();
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
               cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;

@@ -46,6 +46,7 @@ class AddrSpace {
     int NewPageTable();
     void DeleteCurrentThread();
     void PrintPageTable();
+    int StackTopForMain; //Used for threads in exec to find their top
 
     int currentPCReg_space;
     int nextPCReg_space;
