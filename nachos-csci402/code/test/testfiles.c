@@ -24,6 +24,8 @@ int main() {
 	Release(lockNum);
 	DestroyLock(lockNum);
 	Write("Locks complete\n", 15, ConsoleOutput);
+	Exec("../test/halt");
+	Exec("../test/halt");
 	*/
 /*	Exec('halt');*/
 
@@ -31,12 +33,4 @@ int main() {
 	Fork(helloWorld);
 
 	Fork(helloWorld);
-	Fork(helloWorld);
-	Fork(helloWorld);
-	Fork(helloWorld);
-	Fork(helloWorld);
-	Fork(helloWorld);
-	Fork(helloWorld);
-	Fork(helloWorld);
-
 }
