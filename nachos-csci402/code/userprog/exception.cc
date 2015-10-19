@@ -258,6 +258,10 @@ void Close_Syscall(int fd) {
     }
 }
 
+int Rand_sys(int mod, int plus) {
+  return rand() % mod + plus;
+}
+
 void kernel_thread(int decode) {
     kernelLock->Acquire();
     cout << "-------- launching KernelThread --------" << endl;
@@ -276,7 +280,7 @@ void kernel_thread(int decode) {
     machine->WriteRegister(StackReg, stackRegForNewStack ); // TODO: need to calculate: currentThread->stackTop
 
 
-    cout << "num: " << numPages << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
+    //cout << "num: " << numPages << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
     kernelLock->Release();
     machine->Run();
 }
@@ -509,6 +513,10 @@ void ExceptionHandler(ExceptionType which) {
         case SC_DestroyCondition:
             DEBUG('a', "DestroyCondition syscall.\n");
             DestroyCondition_sys(machine->ReadRegister(4));
+            break;
+        case SC_DestroyCondition:
+            DEBUG('a', "Rand syscall.\n");
+            Rand_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         }
 	// Put in the return value and increment the PC

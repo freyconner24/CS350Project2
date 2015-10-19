@@ -38,6 +38,7 @@
 #define SC_Signal	17
 #define SC_Broadcast	18
 #define SC_DestroyCondition	19
+#define SC_Rand	19
 
 #define MAXFILENAME 256
 
@@ -139,6 +140,8 @@ void Yield();
 /* Redundant declaration
 int CreateLock(int vaddr);
 */
+
+int Rand(int mod, int plus);
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */
