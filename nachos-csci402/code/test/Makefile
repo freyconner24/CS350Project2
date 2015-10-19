@@ -68,5 +68,14 @@ exectests: exectests.o start.o
 		$(LD) $(LDFLAGS) start.o exectests.o -o exectests.coff
 		../bin/coff2noff exectests.coff exectests
 
+
+passportoffice.o: passportoffice.c
+				$(CC) $(CFLAGS) -c passportoffice.c
+passportoffice: passportoffice.o start.o
+				$(LD) $(LDFLAGS) start.o passportoffice.o -o passportoffice.coff
+				../bin/coff2noff passportoffice.coff passportoffice
+
+
+
 clean:
 	rm -f *.o *.coff

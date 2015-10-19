@@ -120,7 +120,7 @@ SwapHeader (NoffHeader *noffH)
 AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
-    ++processTable->runningProcessCount;
+    processTable->runningProcessCount++;
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 0;
@@ -155,7 +155,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   //  pageTableLock->Acquire();
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
-        cout << "AddrSpace::numPage for(...): " << i << endl;
+        //cout << "AddrSpace::numPage for(...): " << i << endl;
         tempIndex = bitmap->Find();
         if (tempIndex == -1){
             DEBUG('g', "PAGETABLE TOO BIG");
@@ -338,7 +338,7 @@ void AddrSpace::DeleteCurrentThread(){
 for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 's gonna be 8 for ass2
     //Return physical page
 
-    cout << "Clearing pagetable entry physical, index" << pageTable[stackLocation+i].physicalPage << " " << stackLocation+i << endl;
+    //cout << "Clearing pagetable entry physical, index" << pageTable[stackLocation+i].physicalPage << " " << stackLocation+i << endl;
     bitmap->Clear(pageTable[stackLocation + i].physicalPage);
     pageTable[stackLocation + i].physicalPage = -1;
     pageTable[stackLocation + i].valid = FALSE;

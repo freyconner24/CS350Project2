@@ -282,19 +282,19 @@ void kernel_thread(int decode) {
 }
 
 void exec_thread() {
-  kernelLock->Acquire();
+    kernelLock->Acquire();
     currentThread->space->InitRegisters();
     currentThread->space->RestoreState();
-kernelLock->Acquire();
+    kernelLock->Release();
     machine->Run();
 
 }
 
 bool isLastExecutingThread(Thread* tempCurrentThread) {
-    ProcessEntry* pe = processTable->processEntries[tempCurrentThread->space->processId];
-    cout << "awake: " << pe->awakeThreadCount << endl;
-    cout << "sleep: " << pe->sleepThreadCount << endl;
-    if(tempCurrentThread->space->threadCount == 0) {
+    //ProcessEntry* pe = processTable->processEntries[tempCurrentThread->space->processId];
+    // cout << "awake: " << pe->awakeThreadCount << endl;
+    // cout << "sleep: " << pe->sleepThreadCount << endl;
+    if(tempCurrentThread->space->threadCount == 1) {
         return true;
     }
     return false;
@@ -426,10 +426,11 @@ void ExceptionHandler(ExceptionType which) {
         case SC_Exit:
             kernelLock->Acquire();
             cout << "----------------------- EXIT SYSCALL ------------------------------" << endl;
-            cout << "Current thread: "<< currentThread->getName() << endl;
+            cout << "Current thread: "<< currentThread->getName() << ", currentThread ProcessID: "<< currentThread->space->processId << endl;
+            cout << "Number of threads for this process" << currentThread->space->threadCount << endl;
             bool isLastProcessVar = isLastProcess();
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
-            cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
+              cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
                 DEBUG('a', "Last process and last thread, stopping program.\n");
@@ -447,6 +448,7 @@ void ExceptionHandler(ExceptionType which) {
                       bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
                   }*/
                   DEBUG('a', "Not last process and last thread, deleting process.\n");
+                  cout << "Not last process and last thread, deleting process." << endl;
                   //delete processTable->processEntries[currentThread->space->spaceId];
                   processTable->processEntries[currentThread->space->spaceId] = NULL;
                   delete currentThread->space;
@@ -464,6 +466,7 @@ void ExceptionHandler(ExceptionType which) {
                   // delete lock and cv and set addrspace to null
 
                   DEBUG('a', "Not last thread in a process, deleting thread.\n");
+                cout <<   "Not last thread in a process, deleting thread." << endl;
               currentThread->space->DeleteCurrentThread();
               //TODO differentiate between main and other threads and fork threads
               kernelLock->Release();
