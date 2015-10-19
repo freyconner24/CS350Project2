@@ -514,7 +514,7 @@ void ExceptionHandler(ExceptionType which) {
             DEBUG('a', "DestroyCondition syscall.\n");
             DestroyCondition_sys(machine->ReadRegister(4));
             break;
-        case SC_DestroyCondition:
+        case SC_Rand:
             DEBUG('a', "Rand syscall.\n");
             Rand_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;

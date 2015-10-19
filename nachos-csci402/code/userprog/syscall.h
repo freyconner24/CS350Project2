@@ -38,7 +38,7 @@
 #define SC_Signal	17
 #define SC_Broadcast	18
 #define SC_DestroyCondition	19
-#define SC_Rand	19
+#define SC_Rand	20
 
 #define MAXFILENAME 256
 
