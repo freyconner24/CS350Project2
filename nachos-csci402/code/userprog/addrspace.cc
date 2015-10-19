@@ -285,13 +285,9 @@ void AddrSpace::RestoreState()
 
 int AddrSpace::NewPageTable(){
     //TODO: pageTable lock;
-<<<<<<< HEAD
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    //threadCount++;
-=======
+
     pageTableLock->Acquire();
     threadCount++;
->>>>>>> c751eed5eaed26a8a84df19ecddf39ccfabfb9cf
     cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     for (int i = 0; i < numPages; i++) {
@@ -322,8 +318,9 @@ int AddrSpace::NewPageTable(){
     }
     delete[] pageTable;
     pageTable = newTable;
-    RestoreState();
     numPages = numPages+8;
+    RestoreState();
+    
     int tempNum = numPages - 8; // TODO: FIX
     // machine->pageTable = pageTable;
     // machine->pageTableSize = numPages;
