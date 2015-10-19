@@ -378,6 +378,12 @@ void ExceptionHandler(ExceptionType which) {
             kernelLock->Acquire();
             DEBUG('a', "Fork syscall.\n");
             cout << "Fork Syscall, total threadCount: " << totalThreadCount << endl;
+            virtualAddress = machine->ReadRegister(5);
+            char* nameOfThread = new char[32 + 1];
+            if(copyin(virtualAddress, 32, nameOfThread) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
+                DEBUG('a', "Copyin failed.\n");
+            }
+            nameOfThread[32] = '\0';
             virtualAddress = machine->ReadRegister(4);
             //cout << "Exception::virtualAddress: " << virtualAddress << endl;
             Thread* kernelThread = new Thread("KernelThread");
@@ -400,7 +406,7 @@ void ExceptionHandler(ExceptionType which) {
             int decode = virtualAddress * 100 + kernelThread->id;
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, decode);
             cout << "After KernelThread" << endl;
-
+            delete [] nameOfThread;
             kernelLock->Release();
             break;
         case SC_Exec:
@@ -440,7 +446,7 @@ void ExceptionHandler(ExceptionType which) {
                 DEBUG('a', "Last process and last thread, stopping program.\n");
 
                 cout <<  "Last process and last thread, stopping program " << endl;
-                interrupt->Halt();
+                e->Halt();
             } else if(!isLastProcessVar && isLastExecutingThreadVar) {
               // for every page that belongs to that thread's stack
                   /*int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id];

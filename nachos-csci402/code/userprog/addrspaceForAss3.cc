@@ -121,7 +121,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   pageTableLock = new Lock("PageTableLock");
   pageTableLock->Acquire();
 
-    processTable->runningProcessCount++;
+    ++processTable->runningProcessCount;
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 0;
@@ -156,7 +156,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   //  pageTableLock->Acquire();
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
-        //cout << "AddrSpace::numPage for(...): " << i << endl;
+        cout << "AddrSpace::numPage for(...): " << i << endl;
         tempIndex = bitmap->Find();
         if (tempIndex == -1){
             DEBUG('g', "PAGETABLE TOO BIG");
@@ -286,43 +286,80 @@ int AddrSpace::NewPageTable(){
     pageTableLock->Acquire();
     threadCount++;
     cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
-    TranslationEntry* newTable = new TranslationEntry [numPages+8];
-    for (int i = 0; i < numPages; i++) {
-    	newTable[i].virtualPage = pageTable[i].virtualPage;	// for now, virtual page # = phys page #
-    	newTable[i].physicalPage = pageTable[i].physicalPage;
-    	newTable[i].valid = pageTable[i].valid;
-    	newTable[i].use = pageTable[i].use;
-    	newTable[i].dirty = pageTable[i].dirty;
-    	newTable[i].readOnly = pageTable[i].readOnly;  // if the code segment was entirely on
-    					// a separate page, we could set its
-    					// pages to be read-only
-    }
-    int tempIndex = 0;
-    for (int i = numPages; i < numPages+8; i++) {
-      tempIndex = bitmap->Find();
-      if (tempIndex == -1){
-        DEBUG('g', "PAGETABLE TOO BIG");
-        interrupt->Halt();
+    bool outOfSpace = true;
+    bool foundSpace = true;
+    int index = 0; // variable for saving pagetable index to return
+    for (int i = 0; i < numPages; ++i){
+      if (!pageTable[i].valid) {
+        foundSpace = true;
+        for(int j = i; j < UserStackSize / PageSize; ++j) {
+          if (pageTable[i].valid){
+            foundSpace = false;
+            index = j; // using index temporarily to store starting point of next iteration
+            break;
+          }
+        }
+        if (foundSpace){
+          index = i; // using index for insert index
+          outOfSpace = false;
+          break;
+        }else{
+          i = index;
+        }
       }
-    	newTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-    	newTable[i].physicalPage = tempIndex;
-    	newTable[i].valid = TRUE;
-    	newTable[i].use = FALSE;
-    	newTable[i].dirty = FALSE;
-    	newTable[i].readOnly = FALSE;  // if the code segment was entirely on
-    					// a separate page, we could set its
-    					// pages to be read-only
     }
-    delete[] pageTable;
-    pageTable = newTable;
-    numPages = numPages+8;
-    int tempNum = numPages - 8; // TODO: FIX
-    // machine->pageTable = pageTable;
-    // machine->pageTableSize = numPages;
-    //machine->WriteRegister(StackReg, numPages * PageSize - 16);
-    PrintPageTable();
-    pageTableLock->Release();
-    return tempNum; //TODO: FIX the pagetable search
+    if (!outOfSpace) {
+      for (int i = index; i < index+8; i++) {
+        pageTable[i].virtualPage =
+      	pageTable[i].valid = TRUE;
+      	pageTable[i].use = FALSE;
+      	pageTable[i].dirty = FALSE;
+      	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
+      					// a separate page, we could set its
+      					// pages to be read-only
+      }
+      PrintPageTable();
+      pageTableLock->Release();
+      return index;
+    } else {
+      TranslationEntry* newTable = new TranslationEntry [numPages+8];
+      for (int i = 0; i < numPages; i++) {
+      	newTable[i].virtualPage = pageTable[i].virtualPage;	// for now, virtual page # = phys page #
+      	newTable[i].physicalPage = pageTable[i].physicalPage;
+      	newTable[i].valid = pageTable[i].valid;
+      	newTable[i].use = pageTable[i].use;
+      	newTable[i].dirty = pageTable[i].dirty;
+      	newTable[i].readOnly = pageTable[i].readOnly;  // if the code segment was entirely on
+      					// a separate page, we could set its
+      					// pages to be read-only
+      }
+      int tempIndex = 0;
+      for (int i = numPages; i < numPages+8; i++) {
+        tempIndex = bitmap->Find();
+        if (tempIndex == -1){
+          DEBUG('g', "PAGETABLE TOO BIG");
+          interrupt->Halt();
+        }
+      	newTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+      	newTable[i].physicalPage = tempIndex;
+      	newTable[i].valid = TRUE;
+      	newTable[i].use = FALSE;
+      	newTable[i].dirty = FALSE;
+      	newTable[i].readOnly = FALSE;  // if the code segment was entirely on
+      					// a separate page, we could set its
+      					// pages to be read-only
+      }
+      delete[] pageTable;
+      pageTable = newTable;
+      numPages = numPages+8;
+      int tempNum = numPages - 8; // TODO: FIX
+      // machine->pageTable = pageTable;
+      // machine->pageTableSize = numPages;
+      //machine->WriteRegister(StackReg, numPages * PageSize - 16);
+      PrintPageTable();
+      pageTableLock->Release();
+      return tempNum; //TODO: FIX the pagetable search
+    }
 }
 
 void AddrSpace::DeleteCurrentThread(){
@@ -335,7 +372,7 @@ void AddrSpace::DeleteCurrentThread(){
 for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 's gonna be 8 for ass2
     //Return physical page
 
-    //cout << "Clearing pagetable entry physical, index" << pageTable[stackLocation+i].physicalPage << " " << stackLocation+i << endl;
+    cout << "Clearing pagetable entry physical, index" << pageTable[stackLocation+i].physicalPage << " " << stackLocation+i << endl;
     bitmap->Clear(pageTable[stackLocation + i].physicalPage);
     pageTable[stackLocation + i].physicalPage = -1;
     pageTable[stackLocation + i].valid = FALSE;
