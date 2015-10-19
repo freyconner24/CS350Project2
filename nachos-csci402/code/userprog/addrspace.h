@@ -45,6 +45,7 @@ class AddrSpace {
     int spaceId;
     int NewPageTable();
     void DeleteCurrentThread();
+    void PrintPageTable();
 
     int currentPCReg_space;
     int nextPCReg_space;
@@ -53,6 +54,7 @@ class AddrSpace {
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
+    Lock *pageTableLock;
     unsigned int numPages;		// Number of pages in the virtual
 					// address space
     ProcessEntry* processEntry;

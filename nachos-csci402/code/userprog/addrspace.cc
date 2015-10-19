@@ -118,7 +118,8 @@ SwapHeader (NoffHeader *noffH)
 //----------------------------------------------------------------------
 
 AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
-    kernelLock->Acquire();
+  IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
     ++processTable->runningProcessCount;
     NoffHeader noffH;
     unsigned int i, size;
@@ -137,6 +138,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     cout << "AddrSpace::AddrSpace() sizeOfExecutable: " << size << endl;
     numPages = divRoundUp(size, PageSize) + divRoundUp(UserStackSize,PageSize);
     cout << "AddrSpace::AddrSpace() numPages: " << numPages << endl;
+
                                                     // we need to increase the size
 						// to leave room for the stack
     //size = numPages * PageSize;
@@ -150,6 +152,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 					numPages, size);
     int tempIndex = 0;
 // first, set up the translation
+  //  pageTableLock->Acquire();
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
         cout << "AddrSpace::numPage for(...): " << i << endl;
@@ -171,6 +174,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
         //where we want to read it to, how much do we want to copy, where we want to read it from
 
     }
+    //pageTableLock->Release();
 
 // zero out the entire address space, to zero the unitialized data segment
 // and the stack segment
@@ -190,19 +194,22 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 			noffH.initData.size, noffH.initData.inFileAddr);
     }*/
 
+    //TODO:check if needed
+    // machine->pageTable = pageTable;
+    // machine->pageTableSize = numPages;
+
     processCount++;
-    machine->pageTable = pageTable;
-    machine->pageTableSize = numPages;
-
     processEntry = new ProcessEntry();
-
     processEntry->space = this;
     processEntry->spaceId = processCount;
     processEntry->sleepThreadCount = 0;
     processEntry->awakeThreadCount = 1;
     processTable->processEntries[processCount] = processEntry;
     processId = processCount;
-    kernelLock->Release();
+    processTable->processEntries[processId]->stackLocations[currentThread->id] = divRoundUp(size, PageSize);
+    cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << endl;
+    interrupt->SetLevel(oldLevel);
+
 }
 
 //----------------------------------------------------------------------
@@ -275,7 +282,9 @@ void AddrSpace::RestoreState()
 }
 
 int AddrSpace::NewPageTable(){
-    kernelLock->Acquire();
+    //TODO: pageTable lock;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     for (int i = 0; i < numPages; i++) {
     	newTable[i].virtualPage = pageTable[i].virtualPage;	// for now, virtual page # = phys page #
@@ -306,21 +315,49 @@ int AddrSpace::NewPageTable(){
     delete[] pageTable;
     pageTable = newTable;
     numPages = numPages+8;
-    machine->pageTable = pageTable;
-    machine->pageTableSize = numPages;
-    machine->WriteRegister(StackReg, numPages * PageSize - 16);
+    int tempNum = numPages - 8; // TODO: FIX
+    // machine->pageTable = pageTable;
+    // machine->pageTableSize = numPages;
+    //machine->WriteRegister(StackReg, numPages * PageSize - 16);
 
-    kernelLock->Release();
-    return numPages;
+    PrintPageTable();
+
+    interrupt->SetLevel(oldLevel);
+
+    return tempNum; //TODO: FIX the pagetable search
 }
 
 void AddrSpace::DeleteCurrentThread(){
+  IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+  //pageTableLock->Acquire();
   --threadCount;
-  int j = processTable->processEntries[processCount]->stackLocations[currentThread->id];
-  for (int i = j; i < UserStackSize/ PageSize; ++i){
-    bitmap->Clear(i);
+  int stackLocation = processTable->processEntries[processCount]->stackLocations[currentThread->id];
+  cout << "In DeleteCurrentThread, stackLocation: " << stackLocation << endl;
+for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 's gonna be 8 for ass2
+    //Return physical page
+
+    cout << "Clearing pagetable entry physical, index" << pageTable[stackLocation+i].physicalPage << " " << stackLocation+i << endl;
+    bitmap->Clear(pageTable[stackLocation + i].physicalPage);
+    pageTable[stackLocation + i].physicalPage = -1;
+    pageTable[stackLocation + i].valid = FALSE;
+    //machine
+    // machine->pageTable = pageTable;
+    // machine->pageTableSize = numPages;
+    //machine->WriteRegister(StackReg, numPages * PageSize - 16);
+
   }
-  for (int i = j; i < UserStackSize/ PageSize; ++i){
-    pageTable[i].valid = FALSE;
+  //pageTableLock->Release();
+  interrupt->SetLevel(oldLevel);
+
+
+
+}
+
+void AddrSpace::PrintPageTable(){
+  for(int i = 0 ; i < numPages ; i++){
+    DEBUG('a', " PageTable virtual address: %d, physical address  %d!  isValid: %d\n",
+    pageTable[i].virtualPage, pageTable[i].physicalPage, pageTable[i].valid);
+
   }
 }

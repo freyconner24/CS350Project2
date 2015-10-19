@@ -259,26 +259,35 @@ void Close_Syscall(int fd) {
 }
 
 void kernel_thread(int decode) {
+    kernelLock->Acquire();
     cout << "-------- launching KernelThread --------" << endl;
     int virtualAddress = decode / 100;
     int kernelThreadId = decode - virtualAddress * 100;
     machine->WriteRegister(PCReg, virtualAddress);
     machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
-    cout << "kernelThread->id: " << kernelThreadId << endl;
-    cout << "currentThread->id: " << currentThread->id << endl;
-    cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
-    int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThreadId];
-    machine->WriteRegister(StackReg, numPages * PageSize - 16 ); // TODO: need to calculate: currentThread->stackTop
+    // cout << "kernelThread->id: " << kernelThreadId << endl;
+    // cout << "currentThread->id: " << currentThread->id << endl;
+    // cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
+    // int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThreadId];
+    int numPages = currentThread->space->getNumPages();
+    int stackRegForNewStack = processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id] * PageSize + UserStackSize - 16;
+    // machine->WriteRegister(StackReg, numPages * PageSize - 16 ); // TODO: need to calculate: currentThread->stackTop
+    machine->WriteRegister(StackReg, stackRegForNewStack ); // TODO: need to calculate: currentThread->stackTop
 
-    cout << "numPages: " << numPages << " // should be 1024 bytes apart" << endl;
+
+    cout << "num: " << numPages << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
+    kernelLock->Release();
     machine->Run();
 }
 
 void exec_thread() {
+  kernelLock->Acquire();
     currentThread->space->InitRegisters();
     currentThread->space->RestoreState();
+kernelLock->Acquire();
     machine->Run();
+
 }
 
 bool isLastExecutingThread(Thread* tempCurrentThread) {
@@ -314,7 +323,10 @@ void ExceptionHandler(ExceptionType which) {
         default:
           DEBUG('a', "Unknown syscall - shutting down.\n");
         case SC_Halt:
-            DEBUG('a', "Shutdown, initiated by user program.\n");
+            DEBUG('a', "Shutdown, initiated by user program.\n      ");
+            cout << "Halt is called by: " << currentThread->getName() << ", number of threads remaining in space: " << currentThread->space->threadCount <<  endl;
+            currentThread->space->PrintPageTable();
+
             interrupt->Halt();
             break;
         case SC_Create:
@@ -325,6 +337,7 @@ void ExceptionHandler(ExceptionType which) {
             DEBUG('a', "Open syscall.\n");
             rv = Open_Syscall(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
+
         case SC_Write:
             DEBUG('a', "Write syscall.\n");
             Write_Syscall(machine->ReadRegister(4),
@@ -360,29 +373,35 @@ void ExceptionHandler(ExceptionType which) {
         case SC_Fork:
             kernelLock->Acquire();
             DEBUG('a', "Fork syscall.\n");
-            cout << "Before: " << totalThreadCount << endl;
+            cout << "Fork Syscall, total threadCount: " << totalThreadCount << endl;
             virtualAddress = machine->ReadRegister(4);
-            cout << "Exception::virtualAddress: " << virtualAddress << endl;
+            //cout << "Exception::virtualAddress: " << virtualAddress << endl;
             Thread* kernelThread = new Thread("KernelThread");
-            cout << "After: " << totalThreadCount << endl;
+            //cout << "After: " << totalThreadCount << endl;
             kernelThread->space = currentThread->space;
             ++(currentThread->space->threadCount);
+            cout << "currentThread->space->threadCount: " << currentThread->space->threadCount << endl;
             // TODO: maybe need to give space id
-            cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
-            cout << "kernelThread->space->processId: " << kernelThread->space->processId << endl;
-            int numPagesOfNewPageTable = kernelThread->space->NewPageTable();
-            cout << "numPagesOfNewPageTable: " << numPagesOfNewPageTable << endl;
-            cout << "kernelThread->id: " << kernelThread->id << endl;
-            cout << "currentThread->id: " << currentThread->id << endl;
-            processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] = numPagesOfNewPageTable;
+            //cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
+            //cout << "kernelThread->space->processId: " << kernelThread->space->processId << endl;
+            int startStackLocation = kernelThread->space->NewPageTable();
+            currentThread->space->RestoreState();
+            //cout << "numPagesOfNewPageTable: " << numPagesOfNewPageTable << endl;
+            //cout << "kernelThread->id: " << kernelThread->id << endl;
+            //cout << "currentThread->id: " << currentThread->id << endl;
+            processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] = startStackLocation;
+            cout << "Start stack location for Kernel_thread: " << processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] << endl;
+
             cout << "Before KernelThread" << endl;
             int decode = virtualAddress * 100 + kernelThread->id;
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, decode);
             cout << "After KernelThread" << endl;
+
             kernelLock->Release();
             break;
         case SC_Exec:
             DEBUG('a', "Exec syscall.\n");
+            kernelLock->Acquire();
             virtualAddress = machine->ReadRegister(4);
             char* nameOfProcess = new char[32 + 1];
             if(copyin(virtualAddress, 32, nameOfProcess) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
@@ -396,16 +415,20 @@ void ExceptionHandler(ExceptionType which) {
             newThread->space->spaceId = processCount;
             rv = newThread->space->spaceId;
             newThread->Fork((VoidFunctionPtr)exec_thread, 0);
+            kernelLock->Release();
             break;
         case SC_Exit:
             kernelLock->Acquire();
             cout << "----------------------- EXIT SYSCALL ------------------------------" << endl;
+            cout << "Current thread: "<< currentThread->getName() << endl;
             bool isLastProcessVar = isLastProcess();
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
             cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
                 DEBUG('a', "Last process and last thread, stopping program.\n");
+
+                cout <<  "Last process and last thread, stopping program " << endl;
                 interrupt->Halt();
             } else if(!isLastProcessVar && isLastExecutingThreadVar) {
               // for every page that belongs to that thread's stack
@@ -422,6 +445,9 @@ void ExceptionHandler(ExceptionType which) {
                   processTable->processEntries[currentThread->space->spaceId] = NULL;
                   delete currentThread->space;
                   processTable->runningProcessCount -= 1;
+                  kernelLock->Release();
+                  currentThread->Finish();
+
             }else if(!isLastExecutingThreadVar) {
               /*iterate entire page
               - reclaim all memory not reclaimed
@@ -431,12 +457,13 @@ void ExceptionHandler(ExceptionType which) {
                   //if the addr space matches the space of lock and cv
                   // delete lock and cv and set addrspace to null
 
-                  DEBUG('a', "Not last process and not last thread, deleting thread.\n");
-              //currentThread->space->DeleteCurrentThread();
+                  DEBUG('a', "Not last thread in a process, deleting thread.\n");
+              currentThread->space->DeleteCurrentThread();
               //TODO differentiate between main and other threads and fork threads
+              kernelLock->Release();
+              currentThread->Finish();
+
             }
-            kernelLock->Release();
-            currentThread->Finish();
             break;
         case SC_CreateLock:
             DEBUG('a', "CreateLock syscall.\n");

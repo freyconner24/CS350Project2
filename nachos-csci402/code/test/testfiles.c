@@ -6,7 +6,8 @@
 
 
 void helloWorld(){
-	Write("Hello World!\n", 13, ConsoleOutput);
+	printf("Hello world");
+	Exit(0);
 }
 
 int main() {
@@ -24,6 +25,18 @@ int main() {
 	DestroyLock(lockNum);
 	Write("Locks complete\n", 15, ConsoleOutput);
 	*/
-	Fork(helloWorld);
 /*	Exec('halt');*/
+
+	Write("Fork start\n", 15, ConsoleOutput);
+	Fork(helloWorld);
+
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+
 }
