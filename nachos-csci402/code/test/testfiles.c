@@ -43,7 +43,7 @@ int main() {
 									Fork(helloWorld);
 										Fork(helloWorld);
 	Fork(helloWorld);
-	
+
 	Write("Finshing testfiles.c\n", 21, ConsoleOutput);
 	Exit(0);
 }
