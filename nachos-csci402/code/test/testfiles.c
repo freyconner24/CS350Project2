@@ -4,16 +4,45 @@
 
 #include "syscall.h"
 
+/* ++++++++++++++++++++++++++++++++++++++++ */
+
+int totalForkCalls = 0;
+
+/* ---------------------------------------- */
 
 void helloWorld(){
 	Write("Hello World!\n", 13, ConsoleOutput);
 	Exit(0);
 }
 
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
+void printForkName(char* str) {
+    char* forkString = concatStringWithNumber("ForkCall_", str);
+    writeWithSize(forkString);
+    ++totalForkCalls;
+}
+
+void testForkCall() {
+    int i;
+    for(i = 0; i < NUM_FORK_CALLS; ++i) {
+        Fork((VoidFunctionPtr)printForkName, int_to_str(i));
+    }
+}
+
+/* ---------------------------------------------------- */
+
 int main() {
 	OpenFileId fd;
-	int bytesread, lockNum, condNum;
- 	char buf[20];
+	int bytesread, lockNum, condNum, i;
+	char buf[20];
+
+	clerkLineLock = CreateLock("ClerkLineLock");
+	clerkSenatorLineCV = CreateCondition("ClerkSenatorLineCV");
+	outsideLineCV = CreateCondition("OutsideLineCV");
+	outsideLock = CreateLock("OutsideLock");
+	senatorLock = CreateLock("SenatorLock");
+	senatorLineCV = CreateCondition("SenatorLineCV");
 	/*Write("Testing Locks\n", 14, ConsoleOutput);
 
 	lockNum = CreateLock("nameLock");
@@ -27,6 +56,9 @@ int main() {
 	Exec("../test/halt");
 	Exec("../test/halt");
 	*/
+
+    testForkCall();
+	
 /*	Exec('halt');*/
 
 	Write("Forking helloWorld\n", 19, ConsoleOutput);
