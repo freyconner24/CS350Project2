@@ -6,7 +6,7 @@
 
 
 void helloWorld(){
-	printf("Hello world");
+	Write("Hello World!\n", 13, ConsoleOutput);
 	Exit(0);
 }
 
