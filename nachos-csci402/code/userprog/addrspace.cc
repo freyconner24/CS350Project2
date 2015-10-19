@@ -195,8 +195,8 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     }*/
 
     //TODO:check if needed
-    // machine->pageTable = pageTable;
-    // machine->pageTableSize = numPages;
+    //machine->pageTable = pageTable;
+    //machine->pageTableSize = numPages;
 
     processCount++;
     processEntry = new ProcessEntry();

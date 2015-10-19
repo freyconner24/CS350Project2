@@ -409,13 +409,19 @@ void ExceptionHandler(ExceptionType which) {
             }
             nameOfProcess[32] = '\0';
             OpenFile *filePointer = fileSystem->Open(nameOfProcess);
-            AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
-            Thread* newThread = new Thread("ExecThread");
-            newThread->space = as; //Allocate the space created to this thread's space
-            newThread->space->spaceId = processCount;
-            rv = newThread->space->spaceId;
-            newThread->Fork((VoidFunctionPtr)exec_thread, 0);
-            kernelLock->Release();
+            delete [] nameOfProcess;
+            if (filePointer){ // check if pointer is not null
+              AddrSpace* as = new AddrSpace(filePointer); // Create new addrespace for this executable file
+              Thread* newThread = new Thread("ExecThread");
+              newThread->space = as; //Allocate the space created to this thread's space
+              rv = newThread->space->spaceId;
+              newThread->Fork((VoidFunctionPtr)exec_thread, 0);
+              kernelLock->Release();
+            }else{
+                printf("%s", "Couldn't open file\n");
+                kernelLock->Release();
+            }
+
             break;
         case SC_Exit:
             kernelLock->Acquire();
@@ -441,7 +447,7 @@ void ExceptionHandler(ExceptionType which) {
                       bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
                   }*/
                   DEBUG('a', "Not last process and last thread, deleting process.\n");
-                  delete processTable->processEntries[currentThread->space->spaceId];
+                  //delete processTable->processEntries[currentThread->space->spaceId];
                   processTable->processEntries[currentThread->space->spaceId] = NULL;
                   delete currentThread->space;
                   processTable->runningProcessCount -= 1;
