@@ -32,5 +32,15 @@ int main() {
 	Write("Fork start\n", 15, ConsoleOutput);
 	Fork(helloWorld);
 
+	/*	Fork(helloWorld);
+			Fork(helloWorld);
+				Fork(helloWorld);
+					Fork(helloWorld);
+						Fork(helloWorld);
+							Fork(helloWorld);
+								Fork(helloWorld);
+									Fork(helloWorld);
+										Fork(helloWorld);
 	Fork(helloWorld);
+	*/
 }
