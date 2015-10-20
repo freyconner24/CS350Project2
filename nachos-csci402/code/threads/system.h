@@ -17,10 +17,11 @@
 #include "stats.h"
 #include "timer.h"
 #include "syscall.h"
+#include "addrspace.h"
 
 #define MAX_LOCK_COUNT 50
 #define MAX_COND_COUNT 50
-#define ADDRESS_SPACE_COUNT 50
+#define ADDRESS_SPACE_COUNT 500
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,

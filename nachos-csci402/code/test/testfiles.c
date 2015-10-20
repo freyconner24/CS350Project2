@@ -16,33 +16,35 @@ void helloWorld(){
 }
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-
+/*
 void printForkName(char* str) {
     char* forkString = concatStringWithNumber("ForkCall_", str);
     writeWithSize(forkString);
     ++totalForkCalls;
 }
-
+*/
+/*
 void testForkCall() {
     int i;
     for(i = 0; i < NUM_FORK_CALLS; ++i) {
         Fork((VoidFunctionPtr)printForkName, int_to_str(i));
     }
 }
-
+*/
 /* ---------------------------------------------------- */
 
 int main() {
 	OpenFileId fd;
 	int bytesread, lockNum, condNum, i;
 	char buf[20];
-
+	/*
 	clerkLineLock = CreateLock("ClerkLineLock");
 	clerkSenatorLineCV = CreateCondition("ClerkSenatorLineCV");
 	outsideLineCV = CreateCondition("OutsideLineCV");
 	outsideLock = CreateLock("OutsideLock");
 	senatorLock = CreateLock("SenatorLock");
 	senatorLineCV = CreateCondition("SenatorLineCV");
+	*/
 	/*Write("Testing Locks\n", 14, ConsoleOutput);
 
 	lockNum = CreateLock("nameLock");
@@ -55,14 +57,14 @@ int main() {
 	Write("Locks complete\n", 15, ConsoleOutput);
 	Exec("../test/halt");
 	Exec("../test/halt");
+  testForkCall();
 	*/
 
-    testForkCall();
-	
+
+
 /*	Exec('halt');*/
 
 	Write("Forking helloWorld\n", 19, ConsoleOutput);
-	Yield();
 	Fork(helloWorld);
 
 		Fork(helloWorld);
@@ -74,7 +76,8 @@ int main() {
 								Fork(helloWorld);
 									Fork(helloWorld);
 										Fork(helloWorld);
-	Fork(helloWorld);
+
+										Fork(helloWorld);
 
 	Write("Finshing testfiles.c\n", 21, ConsoleOutput);
 	Exit(0);

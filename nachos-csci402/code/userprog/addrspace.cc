@@ -121,7 +121,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   pageTableLock = new Lock("PageTableLock");
   pageTableLock->Acquire();
 
-    processTable->runningProcessCount++;
+
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 1;
@@ -170,10 +170,24 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
 					// a separate page, we could set its
 					// pages to be read-only
+
+
+          processCount++;
+          processEntry = new ProcessEntry();
+          processEntry->space = this;
+          processEntry->spaceId = processCount;
+          processEntry->sleepThreadCount = 0;
+          processEntry->awakeThreadCount = 1;
+          processTable->processEntries[processCount] = processEntry;
+          processId = processCount;
+
+          StackTopForMain =  divRoundUp(size, PageSize);
+          processTable->processEntries[processId]->stackLocations[currentThread->id] = StackTopForMain; //Assigns arbitrarily to main for every exec
+
+
         executable->ReadAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]),
             PageSize, 40 + pageTable[i].virtualPage * PageSize);
         //where we want to read it to, how much do we want to copy, where we want to read it from
-
     }
 
 // zero out the entire address space, to zero the unitialized data segment
@@ -198,18 +212,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     //machine->pageTable = pageTable;
     //machine->pageTableSize = numPages;
 
-    processCount++;
-    processEntry = new ProcessEntry();
-    processEntry->space = this;
-    processEntry->spaceId = processCount;
-    processEntry->sleepThreadCount = 0;
-    processEntry->awakeThreadCount = 1;
-    processTable->processEntries[processCount] = processEntry;
-    processId = processCount;
-
-    StackTopForMain =  divRoundUp(size, PageSize);
-    processTable->processEntries[processId]->stackLocations[currentThread->id] = StackTopForMain; //Assigns arbitrarily to main for every exec
-    cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << endl;
+  cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << endl;
     pageTableLock->Release();
 
 }

@@ -312,7 +312,7 @@ bool isLastExecutingThread(Thread* tempCurrentThread) {
 // when it gets the lock, it gets awake
 
 bool isLastProcess() {
-    if(processTable->runningProcessCount == 1) {
+    if(processTable->runningProcessCount == 0) {
         return true;
     } else {
         return false;
@@ -408,6 +408,7 @@ void ExceptionHandler(ExceptionType which) {
         case SC_Exec:
             DEBUG('a', "Exec syscall.\n");
             kernelLock->Acquire();
+            processTable->runningProcessCount += 1;
             virtualAddress = machine->ReadRegister(4);
             char* nameOfProcess = new char[32 + 1];
             if(copyin(virtualAddress, 32, nameOfProcess) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
@@ -437,7 +438,7 @@ void ExceptionHandler(ExceptionType which) {
             kernelLock->Acquire();
             cout << "----------------------- EXIT SYSCALL ------------------------------" << endl;
             cout << "Current thread: "<< currentThread->getName() << ", currentThread ProcessID: "<< currentThread->space->processId << endl;
-            cout << "Number of threads for this process: " << currentThread->space->threadCount << endl;
+            cout << "Number of threads for this process: " << currentThread->space->threadCount << " running processes: " << processTable->runningProcessCount <<endl;
             bool isLastProcessVar = isLastProcess();
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
               cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
@@ -460,8 +461,11 @@ void ExceptionHandler(ExceptionType which) {
                   DEBUG('a', "Not last process and last thread, deleting process.\n");
                   cout << "Not last process and last thread, deleting process." << endl;
                   //delete processTable->processEntries[currentThread->space->spaceId];
-                  processTable->processEntries[currentThread->space->spaceId] = NULL;
+
+                  //processTable->processEntries[currentThread->space->spaceId] = NULL;
+                  cout << "About to delete currentThread->space" << endl;
                   delete currentThread->space;
+                  cout << "Deleted currentThread->space" << endl;
                   processTable->runningProcessCount -= 1;
                   kernelLock->Release();
                   currentThread->Finish();
