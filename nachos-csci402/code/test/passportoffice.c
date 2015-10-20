@@ -77,6 +77,7 @@ int clerkCV[CLERK_NUMBER];
 int customerData[CLERK_NUMBER]; /*HUNG: Every clerk will use this to get the customer's customerAttribute index*/
 char clerkTypesStatic[CLERK_TYPES][30] = { "ApplicationClerks : ", "PictureClerks     : ", "PassportClerks    : ", "Cashiers          : " };
 char clerkTypes[CLERK_NUMBER][30];
+int clerkTypesLengths[CLERK_NUMBER];
 int clerkArray[CLERK_TYPES];
 
 int breakLock[CLERK_NUMBER];
@@ -139,7 +140,7 @@ char* my_strcat(char *dest, const char *src) {
     return rdest;
 }
 
-char* my_strcpy(char *s1, const char *s2) {
+char* my_strcpy(char *s1, const char *s2, int len) {
     char *s = s1;
     while ((*s++ = *s2++) != 0)
         ;
@@ -177,10 +178,10 @@ void clerkFactory(int countOfEachClerkType[]) {
     for(i = 0; i < CLERK_TYPES; ++i) {
         if(testChosen == 0) { /* gets input from user if running full program, does not get input if test */
             do {
-                PrintString(clerkTypesStatic[i]);
+                PrintString(clerkTypesStatic[i], 20);
                 tempClerkCount = 4;  /* Technically would read user input */
                 if(tempClerkCount <= 0 || tempClerkCount > 5) {
-                    PrintString("    The number of clerks must be between 1 and 5 inclusive!\n");
+                    PrintString("    The number of clerks must be between 1 and 5 inclusive!\n", 60);
                 }
             } while(tempClerkCount <= 0 || tempClerkCount > 5);
             clerkCount += tempClerkCount;
@@ -190,34 +191,39 @@ void clerkFactory(int countOfEachClerkType[]) {
         }
     }
     /* CL: print statements */
-    PrintString("Number of ApplicationClerks = "); PrintNum(clerkArray[0]); PrintNl();
-    PrintString("Number of PictureClerks = "); PrintNum(clerkArray[1]); PrintNl();
-    PrintString("Number of PassportClerks = "); PrintNum(clerkArray[2]); PrintNl();
-    PrintString("Number of CashiersClerks = "); PrintNum(clerkArray[3]); PrintNl();
-    PrintString("Number of Senators = "); PrintNum(senatorCount); PrintNl();
+    PrintString("Number of ApplicationClerks = ", 30); PrintNum(clerkArray[0]); PrintNl();
+    PrintString("Number of PictureClerks = ", 26); PrintNum(clerkArray[1]); PrintNl();
+    PrintString("Number of PassportClerks = ", 27); PrintNum(clerkArray[2]); PrintNl();
+    PrintString("Number of CashiersClerks = ", 27); PrintNum(clerkArray[3]); PrintNl();
+    PrintString("Number of Senators = ", 20); PrintNum(senatorCount); PrintNl();
 }
 
 void createClerkThread(int type, int* clerkNumber) {
     char clerkType[50], clerkName[50];
-    int i, temp;
+    int i, temp, clerkTypeLength;
     for(i = 0; i < clerkArray[type]; ++i) {
         if(type == 0) {
-            my_strcpy(clerkType, "ApplicationClerk");
-            Fork((VoidFunctionPtr)ApplicationClerk, clerkNumber);
+            clerkTypeLength = 16;
+            my_strcpy(clerkType, "ApplicationClerk", clerkTypeLength);
+            Fork((VoidFunctionPtr)ApplicationClerk, *clerkNumber);
         } else if(type == 1) {
-            my_strcpy(clerkType, "PictureClerk");
-            Fork((VoidFunctionPtr)PictureClerk, clerkNumber);
+            clerkTypeLength = 12;
+            my_strcpy(clerkType, "PictureClerk", clerkTypeLength);
+            Fork((VoidFunctionPtr)PictureClerk, *clerkNumber);
         } else if(type == 2) {
-            my_strcpy(clerkType, "PassportClerk");
-            Fork((VoidFunctionPtr)PassportClerk, clerkNumber);
+            clerkTypeLength = 13;
+            my_strcpy(clerkType, "PassportClerk", clerkTypeLength);
+            Fork((VoidFunctionPtr)PassportClerk, *clerkNumber);
         } else if(type == 3) {
-            my_strcpy(clerkType, "Cashier");
-            Fork((VoidFunctionPtr)Cashier, clerkNumber);
+            clerkTypeLength = 8;
+            my_strcpy(clerkType, "Cashier", clerkTypeLength);
+            Fork((VoidFunctionPtr)Cashier, *clerkNumber);
         } else {
             return;
         }
 
-        clerkTypes[*clerkNumber] = clerkType;
+        my_strcpy(clerkTypes[*clerkNumber], clerkType, clerkTypeLength);
+        clerkTypesLengths[*clerkNumber] = clerkTypeLength;
         *clerkNumber += 1;
     }
 }
@@ -232,31 +238,30 @@ void createClerkThreads() {
 
 void createClerkLocksAndConditions() {
     int i;
-    char* name;
+    char name[20];
+    int cpyLen;
     for(i = 0; i < clerkCount; ++i) {
-        my_strcpy(name, concatClerkNameWithNumber("ClerkLock", i));
-        clerkLock[i] = CreateLock(name);
+        if(i / 10 == 0) {
+            cpyLen = 1;
+        } else {
+            cpyLen = 2;
+        }
+        
+        clerkLock[i] = CreateLock("ClerkLock", 9 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("ClerkCV", i));
-        clerkCV[i] = CreateCondition(name);
+        clerkCV[i] = CreateCondition("ClerkCV", 7 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("ClerkLineCV", i));
-        clerkLineCV[i] = CreateCondition(name);
+        clerkLineCV[i] = CreateCondition("ClerkLineCV", 11 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("ClerkBribeLineCV", i));
-        clerkBribeLineCV[i] = CreateCondition(name);
+        clerkBribeLineCV[i] = CreateCondition("ClerkBribeLineCV", 16 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("BreakLock", i));
-        breakLock[i] = CreateLock(name);
+        breakLock[i] = CreateLock("BreakLock", 9 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("BreakCV", i));
-        breakCV[i] = CreateCondition(name);
+        breakCV[i] = CreateCondition("BreakCV", 7 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("ClerkSenatorCV", i));
-        clerkSenatorCV[i] = CreateCondition(name);
+        clerkSenatorCV[i] = CreateCondition("ClerkSenatorCV", 14 + cpyLen, i);
 
-        my_strcpy(name, concatClerkNameWithNumber("ClerkSenatorCV", i));
-        clerkSenatorCVLock[i] = CreateLock(name);
+        clerkSenatorCVLock[i] = CreateLock("ClerkSenatorCV", 14 + cpyLen, i);
     }
 }
 
@@ -296,12 +301,12 @@ void Part2() {
     char *name;
     int countOfEachClerkType[CLERK_TYPES] = {0,0,0,0};
 
-    writeWithSize("Starting Part 2\n");
-    writeWithSize("Test to run (put 0 for full program): ");
+    PrintString("Starting Part 2\n", 16);
+    PrintString("Test to run (put 0 for full program): ", 38);
     testChosen = 1; /* technically cin >> */
 
     if(testChosen == 1) {
-        writeWithSize("Starting Test 1\n"); /*Customers always take the shortest line, but no 2 customers ever choose the same shortest line at the same time*/
+        PrintString("Starting Test 1\n", 16); /*Customers always take the shortest line, but no 2 customers ever choose the same shortest line at the same time*/
         customerCount = 10;
         clerkCount = 6;
         senatorCount = 0;
@@ -309,7 +314,7 @@ void Part2() {
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 2) {
-        writeWithSize("Starting Test 2\n"); /*Managers only read one from one Clerk's total money received, at a time*/
+        PrintString("Starting Test 2\n", 16); /*Managers only read one from one Clerk's total money received, at a time*/
         customerCount = 5;
         clerkCount = 4;
         senatorCount = 0;
@@ -317,7 +322,7 @@ void Part2() {
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 3) {
-        writeWithSize("Starting Test 3\n"); /*Customers do not leave until they are given their passport by the Cashier.
+        PrintString("Starting Test 3\n", 16); /*Customers do not leave until they are given their passport by the Cashier.
                                      The Cashier does not start on another customer until they know that the last Customer has left their area*/
         customerCount = 5;
         clerkCount = 4;
@@ -326,7 +331,7 @@ void Part2() {
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 4) {
-        writeWithSize("Starting Test 4\n"); /*Clerks go on break when they have no one waiting in their line*/
+        PrintString("Starting Test 4\n", 16); /*Clerks go on break when they have no one waiting in their line*/
         customerCount = 5;
         clerkCount = 4;
         senatorCount = 0;
@@ -334,7 +339,7 @@ void Part2() {
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 5) {
-        writeWithSize("Starting Test 5\n"); /*Managers get Clerks off their break when lines get too long*/
+        PrintString("Starting Test 5\n", 16); /*Managers get Clerks off their break when lines get too long*/
         customerCount = 7;
         clerkCount = 4;
         senatorCount = 0;
@@ -342,7 +347,7 @@ void Part2() {
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 6) {
-        writeWithSize("Starting Test 6\n"); /*Total sales never suffers from a race condition*/
+        PrintString("Starting Test 6\n", 16); /*Total sales never suffers from a race condition*/
         customerCount = 25;
         clerkCount = 4;
         senatorCount = 0;
@@ -350,7 +355,7 @@ void Part2() {
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 7) {
-        writeWithSize("Starting Test 7\n"); /*Total sales never suffers from a race condition*/
+        PrintString("Starting Test 7\n", 16); /*Total sales never suffers from a race condition*/
         customerCount = 7;
         clerkCount = 4;
         senatorCount = 1;
@@ -359,18 +364,18 @@ void Part2() {
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 0) {
         do {
-            writeWithSize("Number of customers: ");
+            PrintString("Number of customers: ", 21);
             customerCount = 20; /* technically cin >> */
             if(customerCount <= 0 || customerCount > 50) {
-                writeWithSize("    The number of customers must be between 1 and 50 inclusive!\n");
+                PrintString("    The number of customers must be between 1 and 50 inclusive!\n", 64);
             }
         } while(customerCount <= 0 || customerCount > 50);
 
         do {
-            writeWithSize("Number of Senators: ");
+            PrintString("Number of Senators: ", 20);
             senatorCount = 1; /* technically cin >> */
             if(senatorCount < 0 || senatorCount > 10) {
-                writeWithSize("    The number of senators must be between 1 and 10 inclusive!\n");
+                PrintString("    The number of senators must be between 1 and 10 inclusive!\n", 63);
             }
         } while(senatorCount < 0 || senatorCount > 10);
 
@@ -382,7 +387,7 @@ void Part2() {
     Summary: chooses customer from the line, or decides if clerks go on break
     Return value: int (the customer number) */
 
-int chooseCustomerFromLine(int myLine) {
+int chooseCustomerFromLine(int myLine, char* clerkName, int clerkNameLength) {
     int testFlag = false;
     do {
         testFlag = false;
@@ -413,12 +418,12 @@ int chooseCustomerFromLine(int myLine) {
                 Signal(clerkBribeLineCV[myLine], clerkLineLock);
                 clerkStates[myLine] = BUSY; /*redundant setting*/
             } else if(clerkLineCount[myLine] > 0) {
-                writeWithSize(my_strcat(currentThreadGetName(currentThread), " is servicing a customer from regular line\n"));
+                PrintString(clerkName, clerkNameLength); PrintNum(myLine); PrintString(" is servicing a customer from regular line\n", 43);
                 Signal(clerkLineCV[myLine], clerkLineLock);
                 clerkStates[myLine] = BUSY; /*redundant setting*/
             }else{
                 Acquire(breakLock[myLine]);
-                writeWithSize(my_strcat(currentThreadGetName(currentThread), " is going on break\n"));
+                PrintString(clerkName, clerkNameLength); PrintNum(myLine); PrintString(" is going on break\n", 19);
                 clerkStates[myLine] = ONBREAK;
                 Release(clerkLineLock);
                 Wait(breakCV[myLine], breakLock[myLine]);
@@ -456,72 +461,45 @@ void clerkSignalsNextCustomer(int myLine) {
     Summary: logics for application clerk
     Return value: void */
 
-void hasSignaledString(char* threadName, char* personName, int custNumber) {
-    writeWithSize(
-        my_strcat(
-            concatStringWithNumber(
-                my_strcat(
-                    my_strcat(
-                        my_strcat(
-                            my_strcat(threadName, " has signalled a ")
-                        , personName)
-                    , " to come to their counter. (")
-                , personName)
-            , custNumber)
-        , ")\n"));
+void hasSignaledString(char* threadName, int threadNameLength, int clerkNum, char* personName, int personNameLength, int custNumber) {
+    PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled a ", 17); 
+    PrintString(personName, personNameLength); PrintString(" to come to their counter. (", 28);
+    PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
 }
 
-void givenSSNString(char* personName, int custNumber, char* threadName) {
-    writeWithSize(
-        my_strcat(
-            my_strcat(
-                my_strcat(
-                    concatStringWithNumber(
-                        my_strcat(
-                            concatStringWithNumber(personName, custNumber)
-                        , " has given SSN ")
-                    , custNumber)
-                , " to ")
-            , threadName)
-        , "\n"));
+void givenSSNString(char* personName, int personNameLength, int custNumber, char* threadName, int threadNameLength, int clerkNum) {
+    PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" has given SSN ", 15);
+    PrintNum(custNumber); PrintString(" to ", 4); PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintNl();
 }
 
-void recievedSSNString(char* threadName, int custNumber, char* personName) {
-    writeWithSize(
-        my_strcat(
-            concatStringWithNumber(
-                my_strcat(
-                    my_strcat(
-                        concatStringWithNumber(
-                            my_strcat(threadName, " has received SSN ")
-                        , custNumber)
-                    , " from ")
-                , personName)
-            , custNumber)
-        , "\n"));
+void recievedSSNString(char* threadName, int threadNameLength, int clerkNum, int custNumber, char* personName, int personNameLength) {
+    PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has received SSN ", 18); PrintNum(custNumber);
+    PrintString(" from ", 6); PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
 }
 
 void ApplicationClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine);
-    int i, numYields;
+    int custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
+    int i, numYields, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("ApplicationClerk_", myLine));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("ApplicationClerk_", myLine), 0); /* TODO: change 0 */
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
 
     while(true) {
-        my_strcpy(personName, "Customer_");
+        my_strcpy(personName, "Customer_", 9);
+        personNameLength = 9;
         if(custNumber >= 50) {
-            my_strcpy(personName,"Senator_\0");
+            my_strcpy(personName,"Senator_", 8);
+            personNameLength = 8;
         }
         clerkStates[myLine] = BUSY;
-        hasSignaledString(currentThreadGetName(currentThread), personName, custNumber);
+        hasSignaledString("ApplicationClerk_", 17, myLine, personName, personNameLength, custNumber);
         Yield();
-        givenSSNString(personName, custNumber, currentThreadGetName(currentThread));
+        givenSSNString(personName, personNameLength, custNumber, "ApplicationClerk_", 17, myLine);
         Yield();
-        recievedSSNString(currentThreadGetName(currentThread), custNumber, personName);
+        recievedSSNString("ApplicationClerk_", 17, myLine, custNumber, personName, personNameLength);
 
 /* CL: random time for applicationclerk to process data */
         numYields = Rand(80, 20);
@@ -530,7 +508,9 @@ void ApplicationClerk() {
         }
 
         customerAttributes[custNumber].applicationIsFiled = true;
-        writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has recorded a completed application for "), personName), custNumber), "\n"));
+        PrintString("ApplicationClerk_", 17); PrintNum(myLine); 
+        PrintString(" has recorded a completed application for ", 42); 
+        PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
 
         clerkSignalsNextCustomer(myLine);
     }
@@ -542,45 +522,48 @@ void ApplicationClerk() {
 
 void PictureClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine);
-    int i = 0, numYields, probability;
+    int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
+    int i = 0, numYields, probability, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("PictureClerk_", currentThread));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("PictureClerk_", currentThread), 0);
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
 
     while(true) {
-        my_strcpy(personName, "Customer_\0");
+        my_strcpy(personName, "Customer_", 9);
+        personNameLength = 9;
         if(custNumber >= 50) {
-                my_strcpy(personName, "Senator_\0");
+                my_strcpy(personName, "Senator_", 8);
+                personNameLength = 8;
         }
         clerkStates[myLine] = BUSY;
-        hasSignaledString(currentThreadGetName(currentThread), personName, custNumber);
+        hasSignaledString("PictureClerk_", 13, myLine, personName, personNameLength, custNumber);
         Yield();
-        givenSSNString(personName, custNumber, currentThreadGetName(currentThread));
+        givenSSNString(personName, personNameLength, custNumber, "PictureClerk_", 13, myLine);
         Yield();
-        recievedSSNString(currentThreadGetName(currentThread), custNumber, personName);
+        recievedSSNString("PictureClerk_", 13, myLine, custNumber, personName, personNameLength);
 
         numYields = Rand(80, 20);
 
         while(!customerAttributes[custNumber].likesPicture) {
-            writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has taken a picture of "), personName), custNumber), "\n"));
+            PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has taken a picture of ", 24);
+            PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
 
             probability = Rand(100, 0);
             if(probability >= 25) {
                 customerAttributes[custNumber].likesPicture = true;
-                writeWithSize(my_strcat(my_strcat(my_strcat(concatStringWithNumber("Customer_", custNumber), " does like their picture from "), currentThreadGetName(currentThread)), "\n"));
+                PrintString("Customer_", 9); PrintNum(custNumber);  PrintString(" does like their picture from ", 30); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
                 Yield();
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(currentThreadGetName(currentThread), " has been told that Customer_"), custNumber), " does like their picture\n"));
+                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that Customer_", 29); PrintNum(custNumber); PrintString(" does like their picture\n", 25);
                 /* CL: random time for pictureclerk to process data */
 
                 for(i = 0; i < numYields; ++i) {
                     Yield();
                 }
             }else{
-                writeWithSize(my_strcat(my_strcat(my_strcat(concatStringWithNumber(personName, custNumber), " does not like their picture from "), currentThreadGetName(currentThread)), "\n"));
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has been told that "), personName), custNumber), " does not like their picture\n"));
+                PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" does not like their picture from ", 34); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
+                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20); PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" does not like their picture\n", 29);
             }
         }
         clerkSignalsNextCustomer(myLine);
@@ -593,24 +576,24 @@ void PictureClerk() {
 
 void PassportClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine);
-    int numYields, clerkMessedUp, i;
+    int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
+    int numYields, clerkMessedUp, i, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("PassportClerk_", currentThread));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("PassportClerk_", currentThread), 0);
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
 
     while(true) {
-        my_strcpy(personName, "Customer_");
+        my_strcpy(personName, "Customer_", 9);
         if(custNumber >= 50) {
-            my_strcpy(personName, "Senator_");
+            my_strcpy(personName, "Senator_", 8);
         }
-        hasSignaledString(currentThreadGetName(currentThread), personName, custNumber);
+        hasSignaledString("PassportClerk_", 14, myLine, personName, personNameLength, custNumber);
         Yield();
-        givenSSNString(personName, custNumber, currentThreadGetName(currentThread));
+        givenSSNString(personName, personNameLength, custNumber, "PassportClerk_", 14, myLine);
         Yield();
-        recievedSSNString(currentThreadGetName(currentThread), custNumber, personName);
+        recievedSSNString("PassportClerk_", 14, myLine, custNumber, personName, personNameLength);
         if(customerAttributes[custNumber].likesPicture && customerAttributes[custNumber].applicationIsFiled) {
             /* CL: only determine that customer has app and pic completed by the boolean */
             writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has determined that "), personName), custNumber), " has both their application and picture completed\n"));
@@ -623,10 +606,12 @@ void PassportClerk() {
               clerkMessedUp = 100;
             }
             if(clerkMessedUp <= 5) { /* Send to back of line */
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), ": Messed up for "), personName), custNumber), ". Sending customer to back of line.\n"));
+                PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(": Messed up for ", 16);
+                PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /*TODO: customer uses this to know which back line to go to*/
             } else {
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has recorded "), personName), custNumber), " passport documentation\n"));
+                PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has recorded ", 14); 
+                PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" passport documentation\n", 24);
                 for(i = 0; i < numYields; ++i) {
                     Yield();
                 }
@@ -634,7 +619,8 @@ void PassportClerk() {
                 customerAttributes[custNumber].hasCertification = true;
             }
         } else {
-            writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has determined that "), personName), custNumber), " does not have both their application and picture completed\n"));
+            PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has determined that ", 21);
+            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" does not have both their application and picture completed\n", 60);
         }
         clerkSignalsNextCustomer(myLine);
     }
@@ -646,29 +632,33 @@ void PassportClerk() {
 
 void Cashier() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine);
-    int numYields, clerkMessedUp, i;
+    int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
+    int numYields, clerkMessedUp, i, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("Cashier_", currentThread));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("Cashier_", currentThread), 0);
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
 
     while(true) {
-        my_strcpy(personName, "Customer_");
+        my_strcpy(personName, "Customer_", 9);
+        personNameLength = 9;
         if(custNumber >= 50) {
-            my_strcpy(personName, "Senator_");
+            my_strcpy(personName, "Senator_", 8);
+            personNameLength = 8;
         }
-        hasSignaledString(currentThreadGetName(currentThread), personName, custNumber);
+        hasSignaledString("Cashier_", 8, myLine, personName, personNameLength, custNumber);
         Yield();
-        givenSSNString(personName, custNumber, currentThreadGetName(currentThread));
+        givenSSNString(personName, personNameLength, custNumber, "Cashier_", 8, myLine);
         Yield();
-        recievedSSNString(currentThreadGetName(currentThread), custNumber, personName);
+        recievedSSNString("Cashier_", 8, myLine, custNumber, personName, personNameLength);
         if(customerAttributes[custNumber].hasCertification) {
-            writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has verified that "), personName), custNumber), "has been certified by a PassportClerk\n"));
+            PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has verified that ", 19);
+            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString("has been certified by a PassportClerk\n", 38);
             customerAttributes[custNumber].money -= 100;/* CL: cashier takes money from customer */
-            writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has received the $100 from "), personName), custNumber), "after certification\n"));
-            writeWithSize(my_strcat(my_strcat(my_strcat(concatStringWithNumber(personName, custNumber), " has given "), currentThreadGetName(currentThread)), " $100\n"));
+            PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has received the $100 from ", 28);
+            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString("after certification\n", 20);
+            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" has given ", 11); PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" $100\n", 6);
 
             clerkMoney[myLine] += 100;
             clerkStates[myLine] = BUSY;
@@ -682,12 +672,18 @@ void Cashier() {
               clerkMessedUp = 100;
             }
             if(clerkMessedUp <= 5) { /* Send to back of line*/
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), ": Messed up for "), personName), custNumber), ". Sending customer to back of line.\n"));
+                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(": Messed up for ", 16); 
+                PrintString(personName, personNameLength); PrintNum(custNumber);
+                PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /* TODO: customer uses this to know which back line to go to*/
             } else {
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has provided "), personName), custNumber), "their completed passport\n"));
+                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has provided ", 11);
+                PrintString(personName, personNameLength); PrintNum(custNumber); 
+                PrintString("their completed passport\n", 25);
                 Yield();
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has recorded that "), personName), custNumber), " has been given their completed passport\n"));
+                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has recorded that ", 19);
+                PrintString(personName, personNameLength); PrintNum(custNumber);
+                PrintString(" has been given their completed passport\n", 41);
                 customerAttributes[custNumber].clerkMessedUp = false;
                 customerAttributes[custNumber].isDone = true;
             }
@@ -711,7 +707,7 @@ void Customer() {
     int totalLineCount;
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: Creating a CustomerAttribute for each new customer*/
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("Customer_", custNumber));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("Customer_", custNumber), 0);
     customerIdMap[custNumber] = currentThread;
     ++globalThreadCount;
 
@@ -778,7 +774,8 @@ void Customer() {
         if(clerkStates[myLine] != AVAILABLE ) { /*clerkStates[myLine] == BUSY*/
             /*I must wait in line*/
             if(customerAttributes[custNumber].money > 100){
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(my_strcat(currentThreadGetName(currentThread), " has gotten in bribe line for "), clerkTypes[myLine]), "_"), myLine), "\n"));
+                PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" has gotten in bribe line for ", 30);
+                PrintString(clerkTypes[myLine], clerkTypesLengths[myLine]); PrintString("_", 1); PrintNum(myLine); PrintNl();
                 /* CL: takes bribe money*/
                 customerAttributes[custNumber].money -= 500;
                 clerkMoney[myLine] += 500;
@@ -786,7 +783,8 @@ void Customer() {
                 bribe = true;
                 Wait(clerkBribeLineCV[myLine], clerkLineLock);
             } else {
-                writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(my_strcat(currentThreadGetName(currentThread), " has gotten in regular line for "), clerkTypes[myLine]), "_"), myLine), "\n"));
+                PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" has gotten in regular line for ", 19); 
+                PrintString(clerkTypes[myLine], clerkTypesLengths[myLine]); PrintString("_", 1); PrintNum(myLine); PrintNl();
                 clerkLineCount[myLine]++;
                 Wait(clerkLineCV[myLine], clerkLineLock);
             }
@@ -819,7 +817,7 @@ void Customer() {
         Release(clerkLock[myLine]);
 
         if(customerAttributes[custNumber].clerkMessedUp) {
-            writeWithSize("Clerk messed up.  Customer is going to the back of the line.\n");
+            PrintString("Clerk messed up.  Customer is going to the back of the line.\n", 61);
             yieldTime = Rand(900, 100);
             for(i = 0; i < yieldTime; ++i) {
                 Yield();
@@ -828,7 +826,7 @@ void Customer() {
         }
     }
     /* CL: CUSTOMER IS DONE! YAY!*/
-    writeWithSize(my_strcat(currentThreadGetName(currentThread), " is leaving the Passport Office.\n"));
+    PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" is leaving the Passport Office.\n", 33);
 }
 
 /*CL: Parameter: int custNumber (because we treat senators as customers)
@@ -840,7 +838,7 @@ void Senator(){
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: custNumber == 50 to 59*/
     int i, myLine;
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("Senator_", custNumber));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("Senator_", custNumber), 0);
     customerIdMap[custNumber] = currentThread;
     ++globalThreadCount;
 
@@ -861,11 +859,11 @@ void Senator(){
         }
         for(i = 0; i < clerkCount; i++){
 
-            writeWithSize(my_strcat(concatStringWithNumber("Waiting for clerk ", i), "\n"));
+            PrintString("Waiting for clerk ", 18); PrintNum(i); PrintNl();
             Signal(clerkSenatorCV[i], clerkSenatorCVLock[i]);
 
             Wait(clerkSenatorCV[i], clerkSenatorCVLock[i]);
-            writeWithSize(my_strcat(concatStringWithNumber("Getting confirmation from clerk ", i), "\n"));
+            PrintString("Getting confirmation from clerk ", 32); PrintNum(i); PrintNl();
         }
         senatorDone=false;
     }else{
@@ -878,9 +876,9 @@ void Senator(){
         senatorDone = false;
 
         for(i = 0; i < clerkCount; i++){
-            writeWithSize(my_strcat(concatStringWithNumber("Waiting for clerk ", i), "\n"));
+            PrintString("Waiting for clerk ", 18); PrintNum(i); PrintNl();
             Wait(clerkSenatorCV[i], clerkSenatorCVLock[i]);
-            writeWithSize(my_strcat(concatStringWithNumber("Getting confirmation from clerk ", i), "\n"));
+            PrintString("Getting confirmation from clerk ", 32); PrintNum(i); PrintNl();
         }
     }
 
@@ -892,33 +890,34 @@ void Senator(){
                 !customerAttributes[custNumber].hasCertification &&
                 !customerAttributes[custNumber].isDone &&
                 clerkTypes[i] == "ApplicationClerk") {
-                writeWithSize(my_strcat(my_strcat("    ", currentThreadGetName(currentThread)), "::: ApplicationClerk chosen\n"));
+                PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: ApplicationClerk chosen\n", 28);
                 myLine = i;
             } else if(/*customerAttributes[custNumber].applicationIsFiled &&*/
                       !customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
                       !customerAttributes[custNumber].isDone &&
                       clerkTypes[i] == "PictureClerk") {
-                writeWithSize(my_strcat(my_strcat("    ", currentThreadGetName(currentThread)), "::: PictureClerk chosen\n"));
+                PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: PictureClerk chosen\n", 24);
                 myLine = i;
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
                       !customerAttributes[custNumber].isDone &&
                       clerkTypes[i] == "PassportClerk") {
-                writeWithSize(my_strcat(my_strcat("    ", currentThreadGetName(currentThread)), "::: PassportClerk chosen\n"));
+                PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: PassportClerk chosen\n", 25);
                 myLine = i;
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       customerAttributes[custNumber].hasCertification &&
                       !customerAttributes[custNumber].isDone &&
                       clerkTypes[i] == "Cashier") {
-                writeWithSize(my_strcat(my_strcat("    ", currentThreadGetName(currentThread)), "::: Cashier chosen\n"));
+                PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: Cashier chosen\n", 19);
                 myLine = i;
             }
         }
         Signal(clerkSenatorCV[myLine], clerkSenatorCVLock[myLine]);
-        writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(my_strcat(currentThreadGetName(currentThread), "has gotten in regular line for "), clerkTypes[myLine]), "_"), myLine), "\n"));
+        PrintString("Senator_", 8); PrintNum(custNumber); PrintString("has gotten in regular line for ", 31);
+        PrintString(clerkTypes[myLine], clerkTypesLengths[myLine]); PrintString("_", 1); PrintNum(myLine); PrintNl();
         Wait(clerkSenatorCV[myLine], clerkSenatorCVLock[myLine]);
 
         Release(clerkSenatorCVLock[myLine]);
@@ -959,18 +958,18 @@ void Senator(){
         Signal(senatorLineCV, senatorLock);
         Release(senatorLock);
     }
-    writeWithSize(my_strcat(currentThreadGetName(currentThread), " is leaving the Passport Office.\n"));
+    PrintString("Senator_", 8); PrintNum(custNumber); PrintString(" is leaving the Passport Office.\n", 33);
 }
 
 void wakeUpClerks() {
     int i;
     for(i = 0; i < clerkCount; ++i) {
         if(clerkStates[i] == ONBREAK) {
-            writeWithSize(concatStringWithNumber(my_strcat(my_strcat("Manager has woken up a ", clerkTypes[i]), "_"), i));
+            PrintString("Manager has woken up a ", 23); PrintString(clerkTypes[i], clerkTypesLengths[i]); PrintString("_", 1); PrintNum(i);
             Acquire(breakLock[i]);
             Signal(breakCV[i], breakLock[i]);
             Release(breakLock[i]);
-            writeWithSize(my_strcat(concatStringWithNumber(my_strcat(clerkTypes[i], "_"), i), " is coming off break\n"));
+            PrintString(clerkTypes[i], clerkTypesLengths[i]); PrintString("_", 1); PrintNum(i); PrintString(" is coming off break\n", 21);
         }
     }
 }
@@ -1000,11 +999,11 @@ void printMoney() {
     }
 
 
-    writeWithSize(my_strcat(concatStringWithNumber("Manager has counted a total of ", applicationMoney), " for ApplicationClerks\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Manager has counted a total of ",pictureMoney), " for PictureClerks\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Manager has counted a total of ", passportMoney), " for PassportClerks\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Manager has counted a total of ", cashierMoney), " for Cashiers\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Manager has counted a total of ", totalMoney), " for the passport office\n\n"));
+    PrintString("Manager has counted a total of ", 31); PrintNum(applicationMoney); PrintString(" for ApplicationClerks\n", 23);
+    PrintString("Manager has counted a total of ", 31); PrintNum(pictureMoney); PrintString(" for PictureClerks\n", 19);
+    PrintString("Manager has counted a total of ", 31); PrintNum(passportMoney); PrintString(" for PassportClerks\n", 20);
+    PrintString("Manager has counted a total of ", 31); PrintNum(cashierMoney); PrintString(" for Cashiers\n", 14);
+    PrintString("Manager has counted a total of ", 31); PrintNum(totalMoney); PrintString(" for passport office\n", 21);
 }
 
 /*CL: Parameter: -
@@ -1014,7 +1013,7 @@ void printMoney() {
 void Manager() {
     int totalLineCount, i, waitTime;
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("Manager_", currentThread));
+    my_strcpy(threadNames[currentThread], "Manager", 7);
     ++globalThreadCount;
 
     do {
@@ -1074,12 +1073,12 @@ int main() {
     int bytesread, lockNum, condNum;
     char buf[20];
 
-    clerkLineLock = CreateLock("ClerkLineLock");
-    clerkSenatorLineCV = CreateCondition("ClerkSenatorLineCV");
-    outsideLineCV = CreateCondition("OutsideLineCV");
-    outsideLock = CreateLock("OutsideLock");
-    senatorLock = CreateLock("SenatorLock");
-    senatorLineCV = CreateCondition("SenatorLineCV");
+    clerkLineLock = CreateLock("ClerkLineLock", 14, 0);
+    clerkSenatorLineCV = CreateCondition("ClerkSenatorLineCV", 19, 0);
+    outsideLineCV = CreateCondition("OutsideLineCV", 14, 0);
+    outsideLock = CreateLock("OutsideLock", 12, 0);
+    senatorLock = CreateLock("SenatorLock", 12, 0);
+    senatorLineCV = CreateCondition("SenatorLineCV", 13, 0);
     /*Write("Testing Locks\n", 14, ConsoleOutput);
 
     lockNum = CreateLock("nameLock");
@@ -1091,6 +1090,5 @@ int main() {
     DestroyLock(lockNum);
     Write("Locks complete\n", 15, ConsoleOutput);
     */
-    Fork(helloWorld);
 /*      Exec('halt');*/
 }

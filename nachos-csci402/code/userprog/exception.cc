@@ -270,7 +270,6 @@ int GetThreadArgs_sys() {
 
 void PrintString_sys(unsigned int vaddr, int len) {
     char *buf = new char[len+1];    // Kernel buffer to put the name in
-    OpenFile *f;            // The new open file
     int id;             // The openfile id
 
     if (!buf) {

@@ -67,6 +67,10 @@ int main() {
 
 	Write("Forking helloWorld\n", 19, ConsoleOutput);
 	Fork(helloWorld, 0);
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 		Fork(helloWorld, 0);
 			Fork(helloWorld, 0);
 				Fork(helloWorld, 0);
