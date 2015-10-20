@@ -120,8 +120,11 @@ SwapHeader (NoffHeader *noffH)
 AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   pageTableLock = new Lock("PageTableLock");
   pageTableLock->Acquire();
-
-
+  lockCount = 0;
+  condCount = 0;
+  userLocks = new UserLock[MAX_LOCK_COUNT];
+  userConds = new UserCond[MAX_COND_COUNT];
+    processTable->runningProcessCount++;
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 1;
@@ -293,7 +296,7 @@ int AddrSpace::NewPageTable(){
     //threadCount++;
     cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
-    for (int i = 0; i < numPages; i++) {
+    for (unsigned int i = 0; i < numPages; i++) {
     	newTable[i].virtualPage = pageTable[i].virtualPage;	// for now, virtual page # = phys page #
     	newTable[i].physicalPage = pageTable[i].physicalPage;
     	newTable[i].valid = pageTable[i].valid;
@@ -304,7 +307,7 @@ int AddrSpace::NewPageTable(){
     					// pages to be read-only
     }
     int tempIndex = 0;
-    for (int i = numPages; i < numPages+8; i++) {
+    for (unsigned int i = numPages; i < numPages+8; i++) {
       tempIndex = bitmap->Find();
       if (tempIndex == -1){
         DEBUG('g', "PAGETABLE TOO BIG");
@@ -361,7 +364,7 @@ for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 
 }
 
 void AddrSpace::PrintPageTable(){
-  for(int i = 0 ; i < numPages ; i++){
+  for(unsigned int i = 0 ; i < numPages ; i++){
     DEBUG('a', " PageTable virtual address: %d, physical address  %d!  isValid: %d\n",
     pageTable[i].virtualPage, pageTable[i].physicalPage, pageTable[i].valid);
 

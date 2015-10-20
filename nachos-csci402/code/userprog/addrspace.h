@@ -25,6 +25,9 @@
 #define MAX_THREADS_IN_PROCESS 100
 #define MAX_PROCESSES_IN_TABLE 100
 
+
+struct UserLock;
+struct UserCond;
 class ProcessEntry;
 
 class AddrSpace {
@@ -52,6 +55,10 @@ class AddrSpace {
     int nextPCReg_space;
     int stackReg_space;
     int threadCount;
+    int lockCount;
+    int condCount;
+    UserLock* userLocks;
+    UserCond* userConds;
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!

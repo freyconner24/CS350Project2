@@ -33,14 +33,12 @@ struct UserLock {
 	bool deleteFlag;
 	bool inUse;
 	Lock* userLock;
-	AddrSpace* addrSpace;
 };
 
 struct UserCond {
 	bool deleteFlag;
 	bool inUse;
 	Condition* userCond;
-	AddrSpace* addrSpace;
 };
 
 class ProcessEntry {
@@ -68,11 +66,7 @@ extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
 
-extern struct UserLock userLocks[MAX_LOCK_COUNT];
-extern struct UserCond userConds[MAX_COND_COUNT];
 extern Lock* kernelLock;
-extern int lockCount;
-extern int condCount;
 extern int processCount;
 extern int totalThreadCount;
 extern BitMap* bitmap;
