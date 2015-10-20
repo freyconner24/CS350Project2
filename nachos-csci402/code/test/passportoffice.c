@@ -52,7 +52,7 @@ int clerkIdMap[CLERK_NUMBER];
 int clerkLineLock;
 int clerkLineCount[CLERK_NUMBER]; /* CL: number of customers in a clerk's regular line*/
 int clerkBribeLineCount[CLERK_NUMBER]; /* CL: number of customers in a clerk's bribe line*/
-typedef enum X {AVAILABLE, BUSY, ONBREAK} ClerkState; /* CL: enum for clerk's conditions*/
+typedef enum {AVAILABLE, BUSY, ONBREAK} ClerkState; /* CL: enum for clerk's conditions*/
 ClerkState clerkStates[CLERK_NUMBER] = {AVAILABLE}; /*state of each clerk is available in the beginning*/
 int clerkLineCV[CLERK_NUMBER];
 int clerkBribeLineCV[CLERK_NUMBER];
@@ -168,7 +168,7 @@ void writeWithSize(char* string) {
 }
 
 char* currentThreadGetName(int currentThread) {
-    return threadNames[currentThread];;
+    return threadNames[currentThread];
 }
 
 /* CL: parameter: an int array that contains numbers of each clerk type
@@ -844,10 +844,10 @@ void Customer() {
     Return value: void*/
 
 void Senator(){
+    int custNumber = globalCustCount;
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: custNumber == 50 to 59*/
     int i, myLine;
     int currentThread = globalThreadCount;
-    int custNumber = globalCustCount;
     my_strcpy(threadNames[currentThread], concatStringWithNumber("Senator_", custNumber));
     customerIdMap[custNumber] = currentThread;
     ++globalThreadCount;
@@ -1076,30 +1076,4 @@ int customersAreAllDone() {
         return true;
     }
     return false;
-}
-
-int main() {
-    OpenFileId fd;
-    int bytesread, lockNum, condNum;
-    char buf[20];
-
-    clerkLineLock = CreateLock("ClerkLineLock");
-    clerkSenatorLineCV = CreateCondition("ClerkSenatorLineCV");
-    outsideLineCV = CreateCondition("OutsideLineCV");
-    outsideLock = CreateLock("OutsideLock");
-    senatorLock = CreateLock("SenatorLock");
-    senatorLineCV = CreateCondition("SenatorLineCV");
-    /*Write("Testing Locks\n", 14, ConsoleOutput);
-
-    lockNum = CreateLock("nameLock");
-    Acquire(lockNum);
-    condNum = CreateCondition("someCondition");
-    Signal(lockNum, condNum);
-    Broadcast(lockNum, condNum);
-    Release(lockNum);
-    DestroyLock(lockNum);
-    Write("Locks complete\n", 15, ConsoleOutput);
-    */
-    Fork(helloWorld);
-/*      Exec('halt');*/
 }

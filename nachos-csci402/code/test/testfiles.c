@@ -3,6 +3,11 @@
  */
 
 #include "syscall.h"
+#include "passportoffice.h"
+
+#define NUM_FORK_CALLS 10
+
+void helloWorld();
 
 /* ++++++++++++++++++++++++++++++++++++++++ */
 
@@ -18,7 +23,8 @@ void helloWorld(){
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 void printForkName(char* str) {
-    char* forkString = concatStringWithNumber("ForkCall_", str);
+    char* forkString;
+    my_strcpy(forkString, my_strcat("ForkCall_", str));
     writeWithSize(forkString);
     ++totalForkCalls;
 }
@@ -26,7 +32,7 @@ void printForkName(char* str) {
 void testForkCall() {
     int i;
     for(i = 0; i < NUM_FORK_CALLS; ++i) {
-        Fork((VoidFunctionPtr)printForkName, int_to_str(i));
+        Fork(printForkName);
     }
 }
 
@@ -64,16 +70,15 @@ int main() {
 	Write("Forking helloWorld\n", 19, ConsoleOutput);
 	Yield();
 	Fork(helloWorld);
-
-		Fork(helloWorld);
-			Fork(helloWorld);
-				Fork(helloWorld);
-					Fork(helloWorld);
-						Fork(helloWorld);
-							Fork(helloWorld);
-								Fork(helloWorld);
-									Fork(helloWorld);
-										Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
+	Fork(helloWorld);
 	Fork(helloWorld);
 
 	Write("Finshing testfiles.c\n", 21, ConsoleOutput);

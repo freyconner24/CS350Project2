@@ -131,15 +131,15 @@ void Close(OpenFileId id);
 /* Fork a thread to run a procedure ("func") in the *same* address space
  * as the current thread.
  */
-void Fork(void (*func)(), char* name);
+void Fork(void (*func)());
 
 /* Yield the CPU to another runnable thread, whether in this address space
  * or not.
  */
 void Yield();
-/* Redundant declaration
-int CreateLock(int vaddr);
-*/
+//Redundant declaration
+int CreateLock(char* name, int sizeOfName, int numToAppend);
+
 
 int Rand(int mod, int plus);
 #endif /* IN_ASM */
