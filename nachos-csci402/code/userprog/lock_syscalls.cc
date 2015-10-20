@@ -73,6 +73,7 @@ void DestroyLock_sys(int index) {
 	if (currentThread->space->userLocks[index].deleteFlag && !currentThread->space->userLocks[index].inUse){
 		printf("Lock  number %d  and name %s is destroyed by %s \n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
 		delete currentThread->space->userLocks[index].userLock;
+	 	--(currentThread->space->lockCount);
 	}
 
 	kernelLock->Release();//release kernel lock

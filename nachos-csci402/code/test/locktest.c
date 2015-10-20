@@ -15,6 +15,8 @@ void t1(){
 	Write("t1 releasing lock1\n", 19, ConsoleOutput);
 	Release(lock1);
 	DestroyLock(lock1);
+	Exit(0);
+	
 }
 
 void t2(){
@@ -22,6 +24,7 @@ void t2(){
 	Acquire(theLockThatDoesntExist);
 	Write("t2 acquiring lock1\n", 19, ConsoleOutput);
 	Acquire(lock1);
+	Exit(0);
 
 }
 
@@ -43,5 +46,5 @@ int main() {
 	Exec("../test/halt");
 	*/
 	Write("Finshing lockfiles.c\n", 22, ConsoleOutput);
-
+	Exit(0);
 }
