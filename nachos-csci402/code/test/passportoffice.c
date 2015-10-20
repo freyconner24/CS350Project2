@@ -479,7 +479,6 @@ void recievedSSNString(char* threadName, int threadNameLength, int clerkNum, int
 
 void ApplicationClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
     int i, numYields, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -488,6 +487,7 @@ void ApplicationClerk() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
         my_strcpy(personName, "Customer_", 9);
         personNameLength = 9;
         if(custNumber >= 50) {
@@ -514,6 +514,7 @@ void ApplicationClerk() {
 
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /* CL: Parameter: int myLine (line number of clerk)
@@ -522,7 +523,6 @@ void ApplicationClerk() {
 
 void PictureClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
     int i = 0, numYields, probability, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -531,6 +531,7 @@ void PictureClerk() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
         my_strcpy(personName, "Customer_", 9);
         personNameLength = 9;
         if(custNumber >= 50) {
@@ -568,6 +569,7 @@ void PictureClerk() {
         }
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /* CL: Parameter: int myLine (line number of clerk)
@@ -576,7 +578,6 @@ void PictureClerk() {
 
 void PassportClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
     int numYields, clerkMessedUp, i, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -585,6 +586,7 @@ void PassportClerk() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
         my_strcpy(personName, "Customer_", 9);
         if(custNumber >= 50) {
             my_strcpy(personName, "Senator_", 8);
@@ -624,6 +626,7 @@ void PassportClerk() {
         }
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /*CL: Parameter: int myLine (line number of clerk)
@@ -632,7 +635,6 @@ void PassportClerk() {
 
 void Cashier() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
     int numYields, clerkMessedUp, i, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -641,6 +643,7 @@ void Cashier() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
         my_strcpy(personName, "Customer_", 9);
         personNameLength = 9;
         if(custNumber >= 50) {
@@ -690,6 +693,7 @@ void Cashier() {
         }
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /*CL: Parameter: int custNumber
@@ -827,6 +831,7 @@ void Customer() {
     }
     /* CL: CUSTOMER IS DONE! YAY!*/
     PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" is leaving the Passport Office.\n", 33);
+    Exit(0);
 }
 
 /*CL: Parameter: int custNumber (because we treat senators as customers)
@@ -959,6 +964,7 @@ void Senator(){
         Release(senatorLock);
     }
     PrintString("Senator_", 8); PrintNum(custNumber); PrintString(" is leaving the Passport Office.\n", 33);
+    Exit(0);
 }
 
 void wakeUpClerks() {
@@ -1034,6 +1040,7 @@ void Manager() {
             Yield();
         }
     } while(!customersAreAllDone());
+    Exit(0);
 }
 
 /*CL: Parameter: -
@@ -1079,6 +1086,7 @@ int main() {
     outsideLock = CreateLock("OutsideLock", 12, 0);
     senatorLock = CreateLock("SenatorLock", 12, 0);
     senatorLineCV = CreateCondition("SenatorLineCV", 13, 0);
+    Part2();
     /*Write("Testing Locks\n", 14, ConsoleOutput);
 
     lockNum = CreateLock("nameLock");
@@ -1091,4 +1099,6 @@ int main() {
     Write("Locks complete\n", 15, ConsoleOutput);
     */
 /*      Exec('halt');*/
+
+    Exit(0);
 }

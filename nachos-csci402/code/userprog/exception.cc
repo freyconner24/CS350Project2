@@ -265,6 +265,7 @@ int Rand_sys(int mod, int plus) {
 }
 
 int GetThreadArgs_sys() {
+    cout << "currentThread::::" << currentThread->getName() << "_" << currentThread->id << endl;
     return threadArgs[currentThread->id];
 }
 
@@ -363,41 +364,41 @@ void ExceptionHandler(ExceptionType which) {
     if ( which == SyscallException ) {
     	switch (type) {
         default:
-          DEBUG('a', "Unknown syscall - shutting down.\n");
+          DEBUG('b', "Unknown syscall - shutting down.\n");
         case SC_Halt:
-            DEBUG('a', "Shutdown, initiated by user program.\n      ");
+            DEBUG('b', "Shutdown, initiated by user program.\n      ");
             cout << "Halt is called by: " << currentThread->getName() << ", number of threads remaining in space: " << currentThread->space->threadCount <<  endl;
             currentThread->space->PrintPageTable();
 
             interrupt->Halt();
             break;
         case SC_Create:
-            DEBUG('a', "Create syscall.\n");
+            DEBUG('b', "Create syscall.\n");
             Create_Syscall(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_Open:
-            DEBUG('a', "Open syscall.\n");
+            DEBUG('b', "Open syscall.\n");
             rv = Open_Syscall(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
 
         case SC_Write:
-            DEBUG('a', "Write syscall.\n");
+            DEBUG('b', "Write syscall.\n");
             Write_Syscall(machine->ReadRegister(4),
                   machine->ReadRegister(5),
                   machine->ReadRegister(6));
             break;
         case SC_Read:
-            DEBUG('a', "Read syscall.\n");
+            DEBUG('b', "Read syscall.\n");
             rv = Read_Syscall(machine->ReadRegister(4),
                   machine->ReadRegister(5),
                   machine->ReadRegister(6));
             break;
         case SC_Close:
-            DEBUG('a', "Close syscall.\n");
+            DEBUG('b', "Close syscall.\n");
             Close_Syscall(machine->ReadRegister(4));
             break;
         case SC_Yield:
-            DEBUG('a', "Yield syscall.\n");
+            DEBUG('b', "Yield syscall.\n");
             printf("YIELD IS CALLED\n");
             kernelLock->Acquire();
             ProcessEntry* processEntry = processTable->processEntries[currentThread->space->processId];
@@ -414,16 +415,17 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Fork:
             kernelLock->Acquire();
-            DEBUG('a', "Fork syscall.\n");
-            cout << "Fork Syscall, total threadCount: " << totalThreadCount << endl;
+            DEBUG('b', "Fork syscall.\n");
+            //cout << "Fork Syscall, total threadCount: " << totalThreadCount << endl;
             virtualAddress = machine->ReadRegister(4);
             //cout << "Exception::virtualAddress: " << virtualAddress << endl;
             Thread* kernelThread = new Thread("KernelThread");
             threadArgs[kernelThread->id] = machine->ReadRegister(5);
+            cout << "This is the value of thread args: " << threadArgs[kernelThread->id] << "::::" << kernelThread->id << endl;
             //cout << "After: " << totalThreadCount << endl;
             kernelThread->space = currentThread->space;
             ++(currentThread->space->threadCount);
-            cout << "currentThread->space->threadCount: " << currentThread->space->threadCount << endl;
+            //cout << "currentThread->space->threadCount: " << currentThread->space->threadCount << endl;
             // TODO: maybe need to give space id
             //cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
             //cout << "kernelThread->space->processId: " << kernelThread->space->processId << endl;
@@ -433,23 +435,23 @@ void ExceptionHandler(ExceptionType which) {
             //cout << "kernelThread->id: " << kernelThread->id << endl;
             //cout << "currentThread->id: " << currentThread->id << endl;
             processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] = startStackLocation;
-            cout << "Start stack location for Kernel_thread: " << processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] << endl;
+            //cout << "Start stack location for Kernel_thread: " << processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] << endl;
 
-            cout << "Before KernelThread" << endl;
+            //cout << "Before KernelThread" << endl;
             //int decode = virtualAddress * 100 + kernelThread->id;
             kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualAddress);
-            cout << "After KernelThread" << endl;
+            //cout << "After KernelThread" << endl;
 
             kernelLock->Release();
             break;
         case SC_Exec:
-            DEBUG('a', "Exec syscall.\n");
+            DEBUG('b', "Exec syscall.\n");
             kernelLock->Acquire();
             processTable->runningProcessCount += 1;
             virtualAddress = machine->ReadRegister(4);
             char* nameOfProcess = new char[32 + 1];
             if(copyin(virtualAddress, 32, nameOfProcess) == -1) {// Convert it to the physical address // read the contents from physical address, which will give you the name of the process to be executed
-                DEBUG('a', "Copyin failed.\n");
+                DEBUG('b', "Copyin failed.\n");
             }
             nameOfProcess[32] = '\0';
             OpenFile *filePointer = fileSystem->Open(nameOfProcess);
@@ -469,8 +471,7 @@ void ExceptionHandler(ExceptionType which) {
 
 
               processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id] = as->StackTopForMain;
-              cout << "here" << endl;
-              cout << "Start stack location for Exec_thread: " << processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id]<< endl;
+              // cout << "Start stack location for Exec_thread: " << processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id]<< endl;
 
               rv = newThread->space->spaceId;
               newThread->Fork((VoidFunctionPtr)exec_thread, 0);
@@ -484,14 +485,14 @@ void ExceptionHandler(ExceptionType which) {
         case SC_Exit:
             kernelLock->Acquire();
             cout << "----------------------- EXIT SYSCALL ------------------------------" << endl;
-            cout << "Current thread: "<< currentThread->getName() << ", currentThread ProcessID: "<< currentThread->space->processId << endl;
-            cout << "Number of threads for this process: " << currentThread->space->threadCount << " running processes: " << processTable->runningProcessCount <<endl;
+            // cout << "Current thread: "<< currentThread->getName() << ", currentThread ProcessID: "<< currentThread->space->processId << endl;
+            // cout << "Number of threads for this process: " << currentThread->space->threadCount << " running processes: " << processTable->runningProcessCount <<endl;
             bool isLastProcessVar = isLastProcess();
             bool isLastExecutingThreadVar = isLastExecutingThread(currentThread);
-              cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
+              // cout << "isLastProcessVar:" << isLastProcessVar << ", isLastExecutingThreadVar: " << isLastExecutingThreadVar << endl;
             if(isLastProcessVar && isLastExecutingThreadVar) {
                 // stop nachos
-                DEBUG('a', "Last process and last thread, stopping program.\n");
+                DEBUG('b', "Last process and last thread, stopping program.\n");
 
                 cout <<  "Last process and last thread, stopping program " << endl;
                 interrupt->Halt();
@@ -505,14 +506,14 @@ void ExceptionHandler(ExceptionType which) {
                       machine->pageTable[i].readOnly = FALSE;
                       bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
                   }*/
-                  DEBUG('a', "Not last process and last thread, deleting process.\n");
-                  cout << "Not last process and last thread, deleting process." << endl;
+                  DEBUG('b', "Not last process and last thread, deleting process.\n");
+                  //cout << "Not last process and last thread, deleting process." << endl;
                   //delete processTable->processEntries[currentThread->space->spaceId];
 
                   //processTable->processEntries[currentThread->space->spaceId] = NULL;
-                  cout << "About to delete currentThread->space" << endl;
+                  //cout << "About to delete currentThread->space" << endl;
                   delete currentThread->space;
-                  cout << "Deleted currentThread->space" << endl;
+                  //cout << "Deleted currentThread->space" << endl;
                   processTable->runningProcessCount -= 1;
                   kernelLock->Release();
                   currentThread->Finish();
@@ -526,8 +527,8 @@ void ExceptionHandler(ExceptionType which) {
                   //if the addr space matches the space of lock and cv
                   // delete lock and cv and set addrspace to null
 
-                  DEBUG('a', "Not last thread in a process, deleting thread.\n");
-                cout <<   "Not last thread in a process, deleting thread." << endl;
+                  DEBUG('b', "Not last thread in a process, deleting thread.\n");
+                //cout <<   "Not last thread in a process, deleting thread." << endl;
               currentThread->space->DeleteCurrentThread();
               //TODO differentiate between main and other threads and fork threads
               kernelLock->Release();
@@ -536,59 +537,59 @@ void ExceptionHandler(ExceptionType which) {
             }
             break;
         case SC_CreateLock:
-            DEBUG('a', "CreateLock syscall.\n");
+            DEBUG('b', "CreateLock syscall.\n");
             rv = CreateLock_sys(machine->ReadRegister(4));
             break;
         case SC_Acquire:
-            DEBUG('a', "Acquire syscall.\n");
+            DEBUG('b', "Acquire syscall.\n");
             Acquire_sys(machine->ReadRegister(4));
             break;
         case SC_Release:
-            DEBUG('a', "Release syscall.\n");
+            DEBUG('b', "Release syscall.\n");
             Release_sys(machine->ReadRegister(4));
             break;
         case SC_DestroyLock:
-            DEBUG('a', "DestroyLock syscall.\n");
+            DEBUG('b', "DestroyLock syscall.\n");
             DestroyLock_sys(machine->ReadRegister(4));
             break;
         case SC_CreateCondition:
-            DEBUG('a', "CreateCondition syscall.\n");
+            DEBUG('b', "CreateCondition syscall.\n");
             rv = CreateCondition_sys(machine->ReadRegister(4));
             break;
         case SC_Wait:
-            DEBUG('a', "Wait syscall.\n");
+            DEBUG('b', "Wait syscall.\n");
             Wait_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_Signal:
-            DEBUG('a', "Signal syscall.\n");
+            DEBUG('b', "Signal syscall.\n");
             Signal_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_Broadcast:
-            DEBUG('a', "Broadcast syscall.\n");
+            DEBUG('b', "Broadcast syscall.\n");
             Broadcast_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_DestroyCondition:
-            DEBUG('a', "DestroyCondition syscall.\n");
+            DEBUG('b', "DestroyCondition syscall.\n");
             DestroyCondition_sys(machine->ReadRegister(4));
             break;
         case SC_Rand:
-            DEBUG('a', "Rand syscall.\n");
+            DEBUG('b', "Rand syscall.\n");
             rv = Rand_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_GetThreadArgs:
-            DEBUG('a', "Get Thread Args syscall.\n");
+            DEBUG('b', "Get Thread Args syscall.\n");
             rv = GetThreadArgs_sys();
             break;
         case SC_PrintString:
-            DEBUG('a', "Print String syscall.\n");
+            DEBUG('b', "Print String syscall.\n");
             PrintString_sys(machine->ReadRegister(4), machine->ReadRegister(5));
             break;
         case SC_PrintNum:
-            DEBUG('a', "Print Num syscall.\n");
+            DEBUG('b', "Print Num syscall.\n");
             PrintNum_sys(machine->ReadRegister(4));
             break;
         case SC_PrintNl:
-            DEBUG('a', "Print Nl syscall.\n");
+            DEBUG('b', "Print Nl syscall.\n");
             PrintNl_sys();
             break;
         }
