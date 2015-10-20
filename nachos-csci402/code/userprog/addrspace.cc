@@ -124,7 +124,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   condCount = 0;
   userLocks = new UserLock[MAX_LOCK_COUNT];
   userConds = new UserCond[MAX_COND_COUNT];
-    processTable->runningProcessCount++;
+    //processTable->runningProcessCount++;
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 1;
@@ -158,8 +158,13 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 // first, set up the translation
   //  pageTableLock->Acquire();
     pageTable = new TranslationEntry[numPages];
+    processCount++;
+    processId = processCount;
+
+    StackTopForMain =  divRoundUp(size, PageSize);
+
     for (i = 0; i < numPages; i++) {
-        //cout << "AddrSpace::numPage for(...): " << i << endl;
+        cout << "AddrSpace::numPage for(...): " << i << endl;
         tempIndex = bitmap->Find();
         if (tempIndex == -1){
             DEBUG('g', "PAGETABLE TOO BIG");
@@ -175,17 +180,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 					// pages to be read-only
 
 
-          processCount++;
-          processEntry = new ProcessEntry();
-          processEntry->space = this;
-          processEntry->spaceId = processCount;
-          processEntry->sleepThreadCount = 0;
-          processEntry->awakeThreadCount = 1;
-          processTable->processEntries[processCount] = processEntry;
-          processId = processCount;
-
-          StackTopForMain =  divRoundUp(size, PageSize);
-          processTable->processEntries[processId]->stackLocations[currentThread->id] = StackTopForMain; //Assigns arbitrarily to main for every exec
+//          processTable->processEntries[processId]->stackLocations[currentThread->id] = StackTopForMain; //Assigns arbitrarily to main for every exec
 
 
         executable->ReadAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]),
@@ -215,9 +210,8 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     //machine->pageTable = pageTable;
     //machine->pageTableSize = numPages;
 
-  cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << endl;
+//  cout << "First thread in new process stack location: " << processTable->processEntries[processId]->stackLocations[currentThread->id] << ", Number of pages for process: " << numPages << endl;
     pageTableLock->Release();
-
 }
 
 //----------------------------------------------------------------------
@@ -229,7 +223,13 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
 
 AddrSpace::~AddrSpace()
 {
-    delete pageTable;
+  for (int i = 0 ; i < numPages ; i++){
+    if(pageTable[i].physicalPage != -1){
+      bitmap->Clear(pageTable[i].physicalPage);
+
+    }
+  }
+  delete pageTable;
 }
 
 //----------------------------------------------------------------------
@@ -327,7 +327,7 @@ int AddrSpace::NewPageTable(){
     numPages = numPages+8;
     RestoreState();
 
-    int tempNum = numPages - 8; // TODO: FIX
+    int tempNum = numPages - 8 ; // TODO: FIX
     // machine->pageTable = pageTable;
     // machine->pageTableSize = numPages;
     //machine->WriteRegister(StackReg, numPages * PageSize - 16);
@@ -341,7 +341,7 @@ void AddrSpace::DeleteCurrentThread(){
 
   //pageTableLock->Acquire();
   --threadCount;
-  int stackLocation = processTable->processEntries[processCount]->stackLocations[currentThread->id];
+  int stackLocation = processTable->processEntries[processId]->stackLocations[currentThread->id];
   cout << "In DeleteCurrentThread, stackLocation: " << stackLocation << endl;
 for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 's gonna be 8 for ass2
     //Return physical page

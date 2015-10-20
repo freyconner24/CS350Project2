@@ -300,15 +300,15 @@ void PrintNl_sys() {
     printf("\n");
 }
 
-void kernel_thread(int decode) {
+void kernel_thread(int virtualAddress) {
     kernelLock->Acquire();
     cout << "-------- launching KernelThread --------" << endl;
-    int virtualAddress = decode / 100;
-    int kernelThreadId = decode - virtualAddress * 100;
+    // int virtualAddress = decode / 100;
+    // int kernelThreadId = decode - virtualAddress * 100;
     machine->WriteRegister(PCReg, virtualAddress);
     machine->WriteRegister(NextPCReg, virtualAddress+4);
     currentThread->space->RestoreState();
-    // cout << "kernelThread->id: " << kernelThreadId << endl;
+     cout << "++++++++++++++++++++ currentThread->space->processId: " << currentThread->space->processId << ", currentThread->id: " << currentThread->id <<  endl;
     // cout << "currentThread->id: " << currentThread->id << endl;
     // cout << "currentThread->space->processId: " << currentThread->space->processId << endl;
     // int numPages = processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThreadId];
@@ -317,7 +317,7 @@ void kernel_thread(int decode) {
     machine->WriteRegister(StackReg, stackRegForNewStack ); // TODO: need to calculate: currentThread->stackTop
 
 
-    //cout << "num: " << numPages << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
+    cout << "stackRegForNewStack: " << stackRegForNewStack << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
     kernelLock->Release();
     machine->Run();
 }
@@ -435,8 +435,8 @@ void ExceptionHandler(ExceptionType which) {
             cout << "Start stack location for Kernel_thread: " << processTable->processEntries[currentThread->space->processId]->stackLocations[kernelThread->id] << endl;
 
             cout << "Before KernelThread" << endl;
-            int decode = virtualAddress * 100 + kernelThread->id;
-            kernelThread->Fork((VoidFunctionPtr)kernel_thread, decode);
+            //int decode = virtualAddress * 100 + kernelThread->id;
+            kernelThread->Fork((VoidFunctionPtr)kernel_thread, virtualAddress);
             cout << "After KernelThread" << endl;
 
             kernelLock->Release();
@@ -458,7 +458,17 @@ void ExceptionHandler(ExceptionType which) {
               Thread* newThread = new Thread("ExecThread");
 
               newThread->space = as; //Allocate the space created to this thread's space
+
+              processEntry = new ProcessEntry();
+              processEntry->space = as;
+              processEntry->spaceId = processCount;
+              // processEntry->sleepThreadCount = 0;
+              // processEntry->awakeThreadCount = 1;
+              processTable->processEntries[processCount] = processEntry;
+
+
               processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id] = as->StackTopForMain;
+              cout << "here" << endl;
               cout << "Start stack location for Exec_thread: " << processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id]<< endl;
 
               rv = newThread->space->spaceId;

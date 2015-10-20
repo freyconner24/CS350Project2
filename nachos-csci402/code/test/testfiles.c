@@ -66,19 +66,18 @@ int main() {
 /*	Exec('halt');*/
 
 	Write("Forking helloWorld\n", 19, ConsoleOutput);
-	Fork(helloWorld);
+	Fork(helloWorld, 0);
+		Fork(helloWorld, 0);
+			Fork(helloWorld, 0);
+				Fork(helloWorld, 0);
+					Fork(helloWorld, 0);
+						Fork(helloWorld, 0);
+							Fork(helloWorld, 0);
+								Fork(helloWorld, 0);
+									Fork(helloWorld, 0);
+										Fork(helloWorld, 0);
 
-		Fork(helloWorld);
-			Fork(helloWorld);
-				Fork(helloWorld);
-					Fork(helloWorld);
-						Fork(helloWorld);
-							Fork(helloWorld);
-								Fork(helloWorld);
-									Fork(helloWorld);
-										Fork(helloWorld);
-
-										Fork(helloWorld);
+										Fork(helloWorld, 0);
 
 	Write("Finshing testfiles.c\n", 21, ConsoleOutput);
 	Exit(0);
