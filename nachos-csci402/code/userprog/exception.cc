@@ -288,6 +288,8 @@ void PrintString_sys(unsigned int vaddr, int len) {
     for (int ii=0; ii<len; ii++) {
         printf("%c",buf[ii]);
     }
+
+    delete[] buf;
 }
 
 void PrintNum_sys(int num) {

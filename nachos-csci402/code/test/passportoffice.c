@@ -596,7 +596,7 @@ void PassportClerk() {
         recievedSSNString("PassportClerk_", 14, myLine, custNumber, personName, personNameLength);
         if(customerAttributes[custNumber].likesPicture && customerAttributes[custNumber].applicationIsFiled) {
             /* CL: only determine that customer has app and pic completed by the boolean */
-            writeWithSize(my_strcat(concatStringWithNumber(my_strcat(my_strcat(currentThreadGetName(currentThread), " has determined that "), personName), custNumber), " has both their application and picture completed\n"));
+            PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has determined that ", 21); PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" has both their application and picture completed\n",50);
             clerkStates[myLine] = BUSY;
 
             numYields = Rand(80, 20);
