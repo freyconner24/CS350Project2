@@ -202,7 +202,7 @@ DestroyCondition:
 	j	$31
 	.end DestroyCondition
 
-  .globl Rand
+	.globl Rand
 	.ent	Rand
 Rand:
 	addiu $2,$0,SC_Rand
@@ -210,6 +210,37 @@ Rand:
 	j	$31
 	.end Rand
 
+	.globl GetThreadArgs
+	.ent	GetThreadArgs
+GetThreadArgs:
+	addiu $2,$0,SC_GetThreadArgs
+	syscall
+	j	$31
+	.end GetThreadArgs
+
+	.globl PrintString
+	.ent	PrintString
+PrintString:
+	addiu $2,$0,SC_PrintString
+	syscall
+	j	$31
+	.end PrintString
+
+	.globl PrintNum
+	.ent	PrintNum
+PrintNum:
+	addiu $2,$0,SC_PrintNum
+	syscall
+	j	$31
+	.end PrintNum
+
+	.globl PrintNl
+	.ent	PrintNl
+PrintNl:
+	addiu $2,$0,SC_PrintNl
+	syscall
+	j	$31
+	.end PrintNl
 
 /* dummy function to keep gcc happy */
         .globl  __main

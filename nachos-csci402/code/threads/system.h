@@ -71,6 +71,7 @@ extern int processCount;
 extern int totalThreadCount;
 extern BitMap* bitmap;
 extern ProcessTable* processTable;
+extern int threadArgs[500];
 
 #ifdef USER_PROGRAM
 #include "machine.h"

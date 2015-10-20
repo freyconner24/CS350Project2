@@ -4,6 +4,7 @@
 
 #include "syscall.h"
 
+#define NUM_FORK_CALLS 10
 /* ++++++++++++++++++++++++++++++++++++++++ */
 
 int totalForkCalls = 0;
@@ -16,18 +17,18 @@ void helloWorld(){
 }
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-/*
+
 void printForkName(char* str) {
-    char* forkString = concatStringWithNumber("ForkCall_", str);
-    writeWithSize(forkString);
+    /*char* forkString = concatStringWithNumber("ForkCall_", str);*/
+    /*writeWithSize(forkString);*/
     ++totalForkCalls;
 }
-*/
+
 /*
 void testForkCall() {
     int i;
     for(i = 0; i < NUM_FORK_CALLS; ++i) {
-        Fork((VoidFunctionPtr)printForkName, int_to_str(i));
+        Fork(printForkName, i);
     }
 }
 */
@@ -37,6 +38,7 @@ int main() {
 	OpenFileId fd;
 	int bytesread, lockNum, condNum, i;
 	char buf[20];
+
 	/*
 	clerkLineLock = CreateLock("ClerkLineLock");
 	clerkSenatorLineCV = CreateCondition("ClerkSenatorLineCV");
@@ -45,6 +47,7 @@ int main() {
 	senatorLock = CreateLock("SenatorLock");
 	senatorLineCV = CreateCondition("SenatorLineCV");
 	*/
+
 	/*Write("Testing Locks\n", 14, ConsoleOutput);
 
 	lockNum = CreateLock("nameLock");
@@ -59,8 +62,6 @@ int main() {
 	Exec("../test/halt");
   testForkCall();
 	*/
-
-
 
 /*	Exec('halt');*/
 

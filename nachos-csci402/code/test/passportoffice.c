@@ -33,9 +33,7 @@ struct CustomerAttribute {
 };
 
 int globalThreadCount = 0;
-int globalClerkCount = 0;
-int globalCustCount = 0;
-char* threadNames[250];
+char threadNames[250][80];
 int currentThread = 0;
 int testChosen = 1; /* CL: indicate test number (1-7) or full program (0)*/
 int clerkCount = 0;  /* CL: number of total clerks of the 4 types that can be modified*/
@@ -77,8 +75,8 @@ int clerkSenatorCV[CLERK_NUMBER];
 int clerkLock[CLERK_NUMBER];
 int clerkCV[CLERK_NUMBER];
 int customerData[CLERK_NUMBER]; /*HUNG: Every clerk will use this to get the customer's customerAttribute index*/
-char* clerkTypesStatic[CLERK_TYPES] = { "ApplicationClerks : ", "PictureClerks     : ", "PassportClerks    : ", "Cashiers          : " };
-char* clerkTypes[CLERK_NUMBER];
+char clerkTypesStatic[CLERK_TYPES][30] = { "ApplicationClerks : ", "PictureClerks     : ", "PassportClerks    : ", "Cashiers          : " };
+char clerkTypes[CLERK_NUMBER][30];
 int clerkArray[CLERK_TYPES];
 
 int breakLock[CLERK_NUMBER];
@@ -100,7 +98,6 @@ struct CustomerAttribute initCustAttr(int ssn) {
     ca.money = moneyArray[randomIndex];
     return ca;
 }
-
 
 char* reverse_str(char* string) {
     int size = 0, i = 0, temp;
@@ -180,10 +177,10 @@ void clerkFactory(int countOfEachClerkType[]) {
     for(i = 0; i < CLERK_TYPES; ++i) {
         if(testChosen == 0) { /* gets input from user if running full program, does not get input if test */
             do {
-                writeWithSize(clerkTypesStatic[i]);
+                PrintString(clerkTypesStatic[i]);
                 tempClerkCount = 4;  /* Technically would read user input */
                 if(tempClerkCount <= 0 || tempClerkCount > 5) {
-                    writeWithSize("    The number of clerks must be between 1 and 5 inclusive!\n");
+                    PrintString("    The number of clerks must be between 1 and 5 inclusive!\n");
                 }
             } while(tempClerkCount <= 0 || tempClerkCount > 5);
             clerkCount += tempClerkCount;
@@ -193,11 +190,11 @@ void clerkFactory(int countOfEachClerkType[]) {
         }
     }
     /* CL: print statements */
-    writeWithSize(my_strcat(concatStringWithNumber("Number of ApplicationClerks = ", clerkArray[0]), "\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Number of PictureClerks = ", clerkArray[1]), "\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Number of PassportClerks = ", clerkArray[2]), "\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Number of CashiersClerks = ", clerkArray[3]), "\n"));
-    writeWithSize(my_strcat(concatStringWithNumber("Number of Senators = ", senatorCount), "\n"));
+    PrintString("Number of ApplicationClerks = "); PrintNum(clerkArray[0]); PrintNl();
+    PrintString("Number of PictureClerks = "); PrintNum(clerkArray[1]); PrintNl();
+    PrintString("Number of PassportClerks = "); PrintNum(clerkArray[2]); PrintNl();
+    PrintString("Number of CashiersClerks = "); PrintNum(clerkArray[3]); PrintNl();
+    PrintString("Number of Senators = "); PrintNum(senatorCount); PrintNl();
 }
 
 void createClerkThread(int type, int* clerkNumber) {
@@ -206,16 +203,16 @@ void createClerkThread(int type, int* clerkNumber) {
     for(i = 0; i < clerkArray[type]; ++i) {
         if(type == 0) {
             my_strcpy(clerkType, "ApplicationClerk");
-            Fork((VoidFunctionPtr)ApplicationClerk);
+            Fork((VoidFunctionPtr)ApplicationClerk, clerkNumber);
         } else if(type == 1) {
             my_strcpy(clerkType, "PictureClerk");
-            Fork((VoidFunctionPtr)PictureClerk);
+            Fork((VoidFunctionPtr)PictureClerk, clerkNumber);
         } else if(type == 2) {
             my_strcpy(clerkType, "PassportClerk");
-            Fork((VoidFunctionPtr)PassportClerk);
+            Fork((VoidFunctionPtr)PassportClerk, clerkNumber);
         } else if(type == 3) {
             my_strcpy(clerkType, "Cashier");
-            Fork((VoidFunctionPtr)Cashier);
+            Fork((VoidFunctionPtr)Cashier, clerkNumber);
         } else {
             return;
         }
@@ -269,7 +266,7 @@ void createClerkLocksAndConditions() {
 void createCustomerThreads() {
     int i;
     for(i = 0; i < customerCount; i++){
-        Fork((VoidFunctionPtr)Customer);
+        Fork((VoidFunctionPtr)Customer, i);
     }
 }
 
@@ -279,7 +276,7 @@ void createCustomerThreads() {
 void createSenatorThreads(){
     int i;
     for(i = 0; i < senatorCount; i++){
-        Fork((VoidFunctionPtr)Senator);
+        Fork((VoidFunctionPtr)Senator, i + 50);
     }
 }
 
@@ -292,7 +289,7 @@ void createTestVariables(int countOfEachClerkType[]) {
     createClerkThreads();
     createCustomerThreads();
     createSenatorThreads();
-    Fork((VoidFunctionPtr)Manager);
+    Fork((VoidFunctionPtr)Manager, 0);
 }
 
 void Part2() {
@@ -505,15 +502,14 @@ void recievedSSNString(char* threadName, int custNumber, char* personName) {
 }
 
 void ApplicationClerk() {
-    int myLine = globalClerkCount;
+    int myLine = GetThreadArgs();
     int custNumber = chooseCustomerFromLine(myLine);
     int i, numYields;
     char personName[50];
     int currentThread = globalThreadCount;
-    my_strcpy(threadNames[currentThread], concatStringWithNumber("ApplicationClerk_", currentThread));
+    my_strcpy(threadNames[currentThread], concatStringWithNumber("ApplicationClerk_", myLine));
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
-    ++globalClerkCount;
 
     while(true) {
         my_strcpy(personName, "Customer_");
@@ -545,7 +541,7 @@ void ApplicationClerk() {
     Return value: void */
 
 void PictureClerk() {
-    int myLine = globalClerkCount;
+    int myLine = GetThreadArgs();
     int custNumber = chooseCustomerFromLine(myLine);
     int i = 0, numYields, probability;
     char personName[50];
@@ -553,7 +549,6 @@ void PictureClerk() {
     my_strcpy(threadNames[currentThread], concatStringWithNumber("PictureClerk_", currentThread));
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
-    ++globalClerkCount;
 
     while(true) {
         my_strcpy(personName, "Customer_\0");
@@ -597,7 +592,7 @@ void PictureClerk() {
     Return value: void */
 
 void PassportClerk() {
-    int myLine = globalClerkCount;
+    int myLine = GetThreadArgs();
     int custNumber = chooseCustomerFromLine(myLine);
     int numYields, clerkMessedUp, i;
     char personName[50];
@@ -605,7 +600,6 @@ void PassportClerk() {
     my_strcpy(threadNames[currentThread], concatStringWithNumber("PassportClerk_", currentThread));
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
-    ++globalClerkCount;
 
     while(true) {
         my_strcpy(personName, "Customer_");
@@ -651,7 +645,7 @@ void PassportClerk() {
     Return value: void*/
 
 void Cashier() {
-    int myLine = globalClerkCount;
+    int myLine = GetThreadArgs();
     int custNumber = chooseCustomerFromLine(myLine);
     int numYields, clerkMessedUp, i;
     char personName[50];
@@ -659,7 +653,6 @@ void Cashier() {
     my_strcpy(threadNames[currentThread], concatStringWithNumber("Cashier_", currentThread));
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
-    ++globalClerkCount;
 
     while(true) {
         my_strcpy(personName, "Customer_");
@@ -708,6 +701,7 @@ void Cashier() {
     Return value: void*/
 
 void Customer() {
+    int custNumber = GetThreadArgs();
     int yieldTime, i;
     int bribe = false; /*HUNG: flag to know whether the customer has paid the bribe, can't be arsed to think of a more elegant way of doing this*/
     int myLine = -1;
@@ -715,13 +709,11 @@ void Customer() {
     int pickedApplication;
     int pickedPicture;
     int totalLineCount;
-    int custNumber = globalCustCount;
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: Creating a CustomerAttribute for each new customer*/
     int currentThread = globalThreadCount;
     my_strcpy(threadNames[currentThread], concatStringWithNumber("Customer_", custNumber));
     customerIdMap[custNumber] = currentThread;
     ++globalThreadCount;
-    ++globalCustCount;
 
     customerAttributes[custNumber] = myCustAtt;
     while(!customerAttributes[custNumber].isDone) {
@@ -844,14 +836,13 @@ void Customer() {
     Return value: void*/
 
 void Senator(){
+    int custNumber = GetThreadArgs();
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: custNumber == 50 to 59*/
     int i, myLine;
     int currentThread = globalThreadCount;
-    int custNumber = globalCustCount;
     my_strcpy(threadNames[currentThread], concatStringWithNumber("Senator_", custNumber));
     customerIdMap[custNumber] = currentThread;
     ++globalThreadCount;
-    ++globalCustCount;
 
     customerAttributes[custNumber] = myCustAtt;
 

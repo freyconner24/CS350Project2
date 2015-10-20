@@ -32,6 +32,8 @@
 #include "custom_syscalls.h"
 #include <stdio.h>
 #include <iostream>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -262,10 +264,45 @@ int Rand_sys(int mod, int plus) {
   return rand() % mod + plus;
 }
 
+int GetThreadArgs_sys() {
+    return threadArgs[currentThread->id];
+}
+
+void PrintString_sys(unsigned int vaddr, int len) {
+    char *buf = new char[len+1];    // Kernel buffer to put the name in
+    OpenFile *f;            // The new open file
+    int id;             // The openfile id
+
+    if (!buf) {
+        printf("%s","Can't allocate kernel buffer in Open\n");
+        return;
+    }
+
+    if( copyin(vaddr,len,buf) == -1 ) {
+        printf("%s","Bad pointer passed to Open\n");
+        delete[] buf;
+        return;
+    }
+
+    buf[len]='\0';
+
+    for (int ii=0; ii<len; ii++) {
+        printf("%c",buf[ii]);
+    }
+}
+
+void PrintNum_sys(int num) {
+    string numString = static_cast<ostringstream*>( &(ostringstream() << num) )->str();
+    cout << numString;
+}
+
+void PrintNl_sys() {
+    printf("\n");
+}
+
 void kernel_thread(int decode) {
     kernelLock->Acquire();
     cout << "-------- launching KernelThread --------" << endl;
-    cout << "currentThread name: " << currentThread->getName() << " processID: " << currentThread->space->spaceId << endl;
     int virtualAddress = decode / 100;
     int kernelThreadId = decode - virtualAddress * 100;
     machine->WriteRegister(PCReg, virtualAddress);
@@ -281,9 +318,7 @@ void kernel_thread(int decode) {
 
 
     //cout << "num: " << numPages << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
-    cout << "kernel_thread is launching" << endl;
     kernelLock->Release();
-
     machine->Run();
 }
 
@@ -383,6 +418,7 @@ void ExceptionHandler(ExceptionType which) {
             virtualAddress = machine->ReadRegister(4);
             //cout << "Exception::virtualAddress: " << virtualAddress << endl;
             Thread* kernelThread = new Thread("KernelThread");
+            threadArgs[kernelThread->id] = machine->ReadRegister(5);
             //cout << "After: " << totalThreadCount << endl;
             kernelThread->space = currentThread->space;
             ++(currentThread->space->threadCount);
@@ -526,7 +562,23 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Rand:
             DEBUG('a', "Rand syscall.\n");
-            Rand_sys(machine->ReadRegister(4), machine->ReadRegister(5));
+            rv = Rand_sys(machine->ReadRegister(4), machine->ReadRegister(5));
+            break;
+        case SC_GetThreadArgs:
+            DEBUG('a', "Get Thread Args syscall.\n");
+            rv = GetThreadArgs_sys();
+            break;
+        case SC_PrintString:
+            DEBUG('a', "Print String syscall.\n");
+            PrintString_sys(machine->ReadRegister(4), machine->ReadRegister(5));
+            break;
+        case SC_PrintNum:
+            DEBUG('a', "Print Num syscall.\n");
+            PrintNum_sys(machine->ReadRegister(4));
+            break;
+        case SC_PrintNl:
+            DEBUG('a', "Print Nl syscall.\n");
+            PrintNl_sys();
             break;
         }
 	// Put in the return value and increment the PC

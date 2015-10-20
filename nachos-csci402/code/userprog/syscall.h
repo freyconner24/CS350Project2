@@ -39,6 +39,10 @@
 #define SC_Broadcast	18
 #define SC_DestroyCondition	19
 #define SC_Rand	20
+#define SC_GetThreadArgs	21
+#define SC_PrintString	22
+#define SC_PrintNum	23
+#define SC_PrintNl	24
 
 #define MAXFILENAME 256
 
@@ -131,17 +135,33 @@ void Close(OpenFileId id);
 /* Fork a thread to run a procedure ("func") in the *same* address space
  * as the current thread.
  */
-void Fork(void (*func)());
+void Fork(void (*func)(), int threadId);
 
 /* Yield the CPU to another runnable thread, whether in this address space
  * or not.
  */
 void Yield();
-/* Redundant declaration
-int CreateLock(int vaddr);
-*/
+/* Redundant declaration*/
 
 int Rand(int mod, int plus);
+
+int GetThreadArgs();
+
+void PrintString(char* str, int len);
+void PrintNum(int num);
+void PrintNl();
+
+int CreateLock(char* name, int size, int appendNum);
+void DestroyLock(int destroyValue);
+void Acquire(int lockNumber);
+void Release(int lockNumber);
+
+int CreateCondition(char* name, int size, int appendNum);
+int DestroyCondition(int destroyValue);
+int Signal(int lockNumber, int conditionNumber);
+int Wait(int lockNumber, int conditionNumber);
+int Broadcast(int lockNumber, int conditionNumber);
+
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */

@@ -28,6 +28,7 @@ int processCount;
 int totalThreadCount;
 BitMap* bitmap;
 ProcessTable* processTable;
+int threadArgs[500];
 
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
