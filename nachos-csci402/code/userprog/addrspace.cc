@@ -287,7 +287,7 @@ int AddrSpace::NewPageTable(){
     //TODO: pageTable lock;
 
     pageTableLock->Acquire();
-    threadCount++;
+    //threadCount++;
     cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     for (int i = 0; i < numPages; i++) {
@@ -320,12 +320,12 @@ int AddrSpace::NewPageTable(){
     pageTable = newTable;
     numPages = numPages+8;
     RestoreState();
-    
+
     int tempNum = numPages - 8; // TODO: FIX
     // machine->pageTable = pageTable;
     // machine->pageTableSize = numPages;
     //machine->WriteRegister(StackReg, numPages * PageSize - 16);
-    PrintPageTable();
+    //PrintPageTable();
     pageTableLock->Release();
     return tempNum; //TODO: FIX the pagetable search
 }

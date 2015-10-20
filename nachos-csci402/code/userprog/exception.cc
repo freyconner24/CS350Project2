@@ -265,6 +265,7 @@ int Rand_sys(int mod, int plus) {
 void kernel_thread(int decode) {
     kernelLock->Acquire();
     cout << "-------- launching KernelThread --------" << endl;
+    cout << "currentThread name: " << currentThread->getName() << " processID: " << currentThread->space->spaceId << endl;
     int virtualAddress = decode / 100;
     int kernelThreadId = decode - virtualAddress * 100;
     machine->WriteRegister(PCReg, virtualAddress);
@@ -280,7 +281,9 @@ void kernel_thread(int decode) {
 
 
     //cout << "num: " << numPages << " // should be 1024 bytes apart, stackRegForNewStak: " << stackRegForNewStack<<  endl;
+    cout << "kernel_thread is launching" << endl;
     kernelLock->Release();
+
     machine->Run();
 }
 
