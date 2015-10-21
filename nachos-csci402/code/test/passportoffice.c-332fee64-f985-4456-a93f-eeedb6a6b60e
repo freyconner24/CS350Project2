@@ -140,12 +140,10 @@ char* my_strcat(char *dest, const char *src) {
     return rdest;
 }
 
-char* my_strcpy(char s1[], const char s2[], int len) {
-    int i = 0;
-    for(i = 0; i < len - 1; ++i) {
-        s1[i] = s2[i];
-    }
-    s1[len] = '\0';
+char* my_strcpy(char *s1, const char *s2, int len) {
+    char *s = s1;
+    while ((*s++ = *s2++) != 0)
+        ;
     return (s1);
 }
 
@@ -197,7 +195,7 @@ void clerkFactory(int countOfEachClerkType[]) {
     PrintString("Number of PictureClerks = ", 26); PrintNum(clerkArray[1]); PrintNl();
     PrintString("Number of PassportClerks = ", 27); PrintNum(clerkArray[2]); PrintNl();
     PrintString("Number of CashiersClerks = ", 27); PrintNum(clerkArray[3]); PrintNl();
-    PrintString("Number of Senators = ", 21); PrintNum(senatorCount); PrintNl();
+    PrintString("Number of Senators = ", 20); PrintNum(senatorCount); PrintNl();
 }
 
 void createClerkThreads() {
@@ -207,7 +205,6 @@ void createClerkThreads() {
         if(clerkType == 0) {
             for(j = 0; j < clerkArray[clerkType]; ++j) {
                 clerkTypeLength = 16;
-                my_strcpy(clerkTypes[clerkNumber], "ApplicationClerk", clerkTypeLength + 1); /* plus one for null character */
                 clerkTypesLengths[clerkNumber] = clerkTypeLength;
                 Fork((VoidFunctionPtr)ApplicationClerk, clerkNumber);
                 ++clerkNumber;
@@ -215,7 +212,6 @@ void createClerkThreads() {
         } else if(clerkType == 1) {
             for(j = 0; j < clerkArray[clerkType]; ++j) {
                 clerkTypeLength = 12;
-                my_strcpy(clerkTypes[clerkNumber], "PictureClerk", clerkTypeLength + 1);
                 clerkTypesLengths[clerkNumber] = clerkTypeLength;
                 Fork((VoidFunctionPtr)PictureClerk,clerkNumber);
                 ++clerkNumber;
@@ -223,7 +219,6 @@ void createClerkThreads() {
         } else if(clerkType == 2) {
             for(j = 0; j < clerkArray[clerkType]; ++j) {
                 clerkTypeLength = 13;
-                my_strcpy(clerkTypes[clerkNumber], "PassportClerk", clerkTypeLength + 1);
                 clerkTypesLengths[clerkNumber] = clerkTypeLength;
                 Fork((VoidFunctionPtr)PassportClerk,clerkNumber);
                 ++clerkNumber;
@@ -231,7 +226,6 @@ void createClerkThreads() {
         } else { /* i == 3 */
             for(j = 0; j < clerkArray[clerkType]; ++j) {
                 clerkTypeLength = 8;
-                my_strcpy(clerkTypes[clerkNumber], "Cashier", clerkTypeLength + 1);
                 clerkTypesLengths[clerkNumber] = clerkTypeLength;
                 Fork((VoidFunctionPtr)Cashier,clerkNumber);
                 ++clerkNumber;
@@ -421,7 +415,6 @@ int chooseCustomerFromLine(int myLine, char* clerkName, int clerkNameLength) {
         }else{
             Acquire(clerkLineLock);
             if(clerkBribeLineCount[myLine] > 0) {
-                PrintString(clerkName, clerkNameLength); PrintNum(myLine); PrintString(" is servicing a customer from bribe line\n", 41);
                 Signal(clerkLineLock, clerkBribeLineCV[myLine]);
                 clerkStates[myLine] = BUSY; /*redundant setting*/
             } else if(clerkLineCount[myLine] > 0) {
@@ -831,9 +824,7 @@ void Customer() {
         } else {
             clerkStates[myLine] = BUSY;
         }
-        PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" is trying to release clerkLineLock\n", 36); 
         Release(clerkLineLock);
-        PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" released clerkLineLock\n", 24); 
 
         Acquire(clerkLock[myLine]);
         /*Give my data to my clerk*/
@@ -919,29 +910,29 @@ void Senator(){
             if(!customerAttributes[custNumber].applicationIsFiled &&
                 /*customerAttributes[custNumber].likesPicture &&*/
                 !customerAttributes[custNumber].hasCertification &&
-                !customerAttributes[custNumber].isDone /*&&
-                clerkTypes[i] == "ApplicationClerk"*/) {
+                !customerAttributes[custNumber].isDone &&
+                clerkTypes[i] == "ApplicationClerk") {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: ApplicationClerk chosen\n", 28);
                 myLine = i;
             } else if(/*customerAttributes[custNumber].applicationIsFiled &&*/
                       !customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone /*&&
-                      clerkTypes[i] == "PictureClerk"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      clerkTypes[i] == "PictureClerk") {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: PictureClerk chosen\n", 24);
                 myLine = i;
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone /*&&
-                      clerkTypes[i] == "PassportClerk"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      clerkTypes[i] == "PassportClerk") {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: PassportClerk chosen\n", 25);
                 myLine = i;
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone /*&&
-                      clerkTypes[i] == "Cashier"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      clerkTypes[i] == "Cashier") {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: Cashier chosen\n", 19);
                 myLine = i;
             }
@@ -997,7 +988,7 @@ void wakeUpClerks() {
     int i;
     for(i = 0; i < clerkCount; ++i) {
         if(clerkStates[i] == ONBREAK) {
-            PrintString("Manager has woken up a ", 23); PrintString(clerkTypes[i], clerkTypesLengths[i]); PrintString("_", 1); PrintNum(i); PrintNl();
+            PrintString("Manager has woken up a ", 23); PrintString(clerkTypes[i], clerkTypesLengths[i]); PrintString("_", 1); PrintNum(i);
             Acquire(breakLock[i]);
             Signal(breakLock[i],breakCV[i]);
             Release(breakLock[i]);
@@ -1047,7 +1038,7 @@ void Manager() {
     int currentThread = globalThreadCount;
     /* my_strcpy(threadNames[currentThread], "Manager", 7);*/
     ++globalThreadCount;
-        PrintString("in manager\n", 11);
+        PrintString("in manager\n", 14);
 
     do {
         /* IntStatus oldLevel = interrupt->SetLevel(IntOff); disable interrupts*/

@@ -44,7 +44,7 @@ int CreateCondition_sys(int vaddr, int size, int appendNum) {
 	currentThread->space->userConds[currentThread->space->condCount].isDeleted = FALSE; // indicate the lock is not in use
 	int currentCondIndex = currentThread->space->condCount; // save the currentlockcount to be returned later
 	currentThread->space->condCount++;
-	printf("CreateCondition::Condition number %d and name %s is created by %s\n", currentCondIndex, currentThread->space->userConds[currentCondIndex].userCond->getName(), currentThread->getName());
+	printf("CreateCondition::Condition number: %d || name: %s is created by %s\n", currentCondIndex, currentThread->space->userConds[currentCondIndex].userCond->getName(), currentThread->getName());
 
 	currentThread->space->condsLock->Release(); //release kernel lock
 	return currentCondIndex;

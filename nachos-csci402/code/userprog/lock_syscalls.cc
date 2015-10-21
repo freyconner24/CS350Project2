@@ -40,7 +40,7 @@ int CreateLock_sys(int vaddr, int size, int appendNum) {
 	++(currentThread->space->lockCount);
 	DEBUG('a', " Lock has number %d and name %s\n", currentLockIndex, buffer);
 	DEBUG('l', " Lock has number %d and name %s\n", currentLockIndex, buffer);
-	printf(" Lock  number %d  and name %s is created by %s \n", currentLockIndex, currentThread->space->userLocks[currentLockIndex].userLock->getName(), currentThread->getName());
+	printf("Lock::Lock number: %d || name: %s created by %s\n", currentLockIndex, currentThread->space->userLocks[currentLockIndex].userLock->getName(), currentThread->getName());
 	currentThread->space->locksLock->Release(); //release kernel lock
 	return currentLockIndex;
 }
@@ -48,19 +48,19 @@ int CreateLock_sys(int vaddr, int size, int appendNum) {
 void Acquire_sys(int index) {
 	currentThread->space->locksLock->Acquire();
 	if (index < 0 || index >= currentThread->space->lockCount){
-		printf(" Lock number %d invalid, thread %s can't acquire-----------------------\n", index, currentThread->getName());
+		printf("Lock::Lock number %d invalid, thread %s can't acquire-----------------------\n", index, currentThread->getName());
 		currentThread->space->locksLock->Release();
 		return;
 	}
 
 	if (currentThread->space->userLocks[index].isDeleted == TRUE){
-		printf(" Lock number %d already destroyed, thread %s can't acquire-----------------------\n", index, currentThread->getName());
+		printf("Lock::Lock number %d already destroyed, thread %s can't acquire-----------------------\n", index, currentThread->getName());
 		currentThread->space->locksLock->Release();
 		interrupt->Halt();
 	}
 
 	if(currentThread->space->userLocks[index].userLock->lockStatus == currentThread->space->userLocks[index].userLock->BUSY){
-		printf(" Lock number %d and name %s already in use, adding to queue-----------------------\n", index, currentThread->space->userLocks[index].userLock->getName());
+		printf("Lock::Lock number %d and name %s already in use, adding to queue-----------------------\n", index, currentThread->space->userLocks[index].userLock->getName());
 		currentThread->space->locksLock->Release();
 		currentThread->space->userLocks[index].userLock->Acquire(); // acquire userlock at index
 		return;
@@ -68,7 +68,7 @@ void Acquire_sys(int index) {
 
 	 // CL: acquire kernelLock so that no other thread is running on kernel mode
 	DEBUG('a', "Lock  number %d and name %s\n", index, currentThread->space->userLocks[index].userLock->getName());
-	printf(" Lock  number %d  and name %s is acquired by %s \n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
+	printf("Lock::Lock number: %d || name:  %s acquired by %s\n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
  //TODO: race condition?
 	Lock* userLock = currentThread->space->userLocks[index].userLock;
 	if(userLock->lockStatus != userLock->FREE) {
@@ -96,7 +96,7 @@ void Release_sys(int index) {
 		currentThread->space->locksLock->Release();
 		return;
 	}
-	printf(" Lock number %d and name %s is released by %s \n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
+	printf("Lock::Lock number: %d || and name: %s released by %s\n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
 
 	if(!currentThread->space->userLocks[index].userLock->waitQueueIsEmpty()) {
 		updateProcessThreadCounts(currentThread->space, AWAKE);

@@ -113,7 +113,7 @@ Initialize(int argc, char **argv)
 	    	argCount = 2;
 	    }
 	} else if (!strcmp(*argv, "-rs")) {
-	    ASSERT(argc > 1);
+//	    ASSERT(argc > 1);
 	    RandomInit(atoi(*(argv + 1)));	// initialize pseudo-random
 						// number generator
 	    randomYield = TRUE;
