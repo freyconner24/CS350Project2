@@ -56,10 +56,10 @@ class AddrSpace {
     int threadCount;
     int lockCount;
     int condCount;
-    int maxLockCount;
-    int maxCondCount;
     UserLock* userLocks;
     UserCond* userConds;
+    Lock* locksLock;
+    Lock* condsLock;
     int StackTopForMain;
 
  private:

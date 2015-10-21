@@ -83,7 +83,7 @@ class Lock {
   private:
     char* name;                // for debugging
     // plus some other stuff you'll need to define
-    
+
     Thread* lockOwner;
     List* waitQueue;
 };
@@ -134,7 +134,7 @@ class Condition {
     void Signal(Lock *conditionLock);   // conditionLock must be held by
     void Broadcast(Lock *conditionLock);// the currentThread for all of
                     // these operations
-
+    bool waitQueueIsEmpty() {return waitQueue->IsEmpty();}
   private:
     char* name;
     // plus some other stuff you'll need to define

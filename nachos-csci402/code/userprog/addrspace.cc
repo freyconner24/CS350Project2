@@ -122,8 +122,8 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   pageTableLock->Acquire();
   lockCount = 0;
   condCount = 0;
-  maxLockCount = 0;
-  maxCondCount = 0;
+  condsLock = new Lock ("CondsLock");
+  locksLock = new Lock("LocksLock");
   userLocks = new UserLock[MAX_LOCK_COUNT];
   userConds = new UserCond[MAX_COND_COUNT];
     //processTable->runningProcessCount++;
