@@ -265,6 +265,7 @@ int Rand_sys(int mod, int plus) {
 }
 
 int GetThreadArgs_sys() {
+  cout << "currentThread::::" << currentThread->getName() << "_" << currentThread->id << endl;
     return threadArgs[currentThread->id];
 }
 
