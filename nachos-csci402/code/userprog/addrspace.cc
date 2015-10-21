@@ -123,6 +123,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   lockCount = 0;
   condCount = 0;
   maxLockCount = 0;
+  maxCondCount = 0;
   userLocks = new UserLock[MAX_LOCK_COUNT];
   userConds = new UserCond[MAX_COND_COUNT];
     //processTable->runningProcessCount++;

@@ -2,6 +2,7 @@
 #include "system.h"
 #include "syscall.h"
 #include "custom_syscalls.h"
+#include "addrspace.h"
 #include <stdio.h>
 #include <iostream>
 
@@ -9,7 +10,11 @@
 
 int CreateCondition_sys(int vaddr, int size, int appendNum) {
 	kernelLock->Acquire(); //CL: acquire kernelLock so that no other thread is running on kernel mode
-
+	if (currentThread->space->maxCondCount == MAX_COND_COUNT){
+		printf(currentThread->getName());
+		printf(" has too many conditions!\n");
+		return -1;
+	}
 	char* buffer = new char[BUFFER_SIZE + 1];
 	buffer[BUFFER_SIZE] = '\0'; //end the char array with a null character
 
@@ -18,9 +23,11 @@ int CreateCondition_sys(int vaddr, int size, int appendNum) {
 		DEBUG('b',"ERROR IN CONDCOUNT\n");
 	}
 
-	currentThread->space->userConds[currentThread->space->condCount].userCond = new Condition(buffer); // instantiate new cond
+	currentThread->space->userConds[currentThread->space->condCount].userCond = new Condition(buffer); // instantiate new lock
 	currentThread->space->userConds[currentThread->space->condCount].deleteFlag = FALSE; // indicate the lock is not to be deleted
-
+	currentThread->space->userConds[currentThread->space->condCount].inUse = FALSE; // indicate the lock is not in use
+	currentThread->space->userConds[currentThread->space->condCount].isDeleted = FALSE; // indicate the lock is not in use
+	++(currentThread->space->maxCondCount);
 	int currentCondIndex = currentThread->space->condCount; // save the currentlockcount to be returned later
 	currentThread->space->condCount++;
 	printf("Condition  number %d  and name %s is created by %s \n", currentCondIndex, currentThread->space->userConds[currentCondIndex].userCond->getName(), currentThread->getName());
@@ -32,6 +39,27 @@ int CreateCondition_sys(int vaddr, int size, int appendNum) {
 void Wait_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
 
+	if (conditionIndex < 0 || conditionIndex >= currentThread->space->maxCondCount){
+		printf("waiting invalid cond\n");
+		return;
+	}
+	if (lockIndex < 0 || lockIndex >= currentThread->space->maxLockCount){
+		printf("invalid lock\n");
+		return;
+	}
+	if (currentThread->space->userConds[conditionIndex].isDeleted == TRUE){
+		printf("waiting destroyed cond\n");
+		return;
+	}
+	if (currentThread->space->userLocks[lockIndex].isDeleted == TRUE){
+		printf("waiting destroyed lock\n");
+		return;
+	}
+	if(currentThread->space->userConds[conditionIndex].inUse == TRUE){
+		printf(" cond already waiting\n");
+		return;
+	}
+	// how does a lock use a wait?
 	currentThread->space->userConds[conditionIndex].inUse = TRUE;
 
 	kernelLock->Release();//release kernel lock
@@ -43,8 +71,27 @@ void Wait_sys(int lockIndex, int conditionIndex) {
 
 void Signal_sys(int lockIndex, int conditionIndex) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
-
-	currentThread->space->userConds[conditionIndex].inUse = TRUE;
+	if (conditionIndex < 0 || conditionIndex >= currentThread->space->maxCondCount){
+		printf("signaling invalid cond\n");
+		return;
+	}
+	if (lockIndex < 0 || lockIndex >= currentThread->space->maxLockCount){
+		printf("invalid lock\n");
+		return;
+	}
+	if (currentThread->space->userConds[conditionIndex].isDeleted == TRUE){
+		printf("signaling destroyed cond\n");
+		return;
+	}
+	if (currentThread->space->userLocks[lockIndex].isDeleted == TRUE){
+		printf("signaling destroyed lock\n");
+		return;
+	}
+	if(currentThread->space->userConds[conditionIndex].inUse == TRUE){
+		printf(" cond not waiting, can't signal\n");
+		return;
+	}
+	currentThread->space->userConds[conditionIndex].inUse = FALSE;
 
 	kernelLock->Release();//release kernel lock
 	printf("Condition  number %d, name %s is signalled by %s \n", conditionIndex, currentThread->space->userConds[conditionIndex].userCond->getName(), currentThread->getName());
@@ -68,7 +115,19 @@ void Broadcast_sys(int lockIndex, int conditionIndex) {
 
 void DestroyCondition_sys(int index) {
 	kernelLock->Acquire(); // CL: acquire kernelLock so that no other thread is running on kernel mode
-	currentThread->space->userConds[index].deleteFlag = TRUE; // set delete flag to true regardless
+	if (index < 0 || index >= currentThread->space->maxCondCount){
+		printf("destroying invalid cond\n");
+		return;
+	}
+	if (currentThread->space->userConds[index].isDeleted == TRUE){
+		printf("destroying invalid cond\n");
+		return;
+	}
+	currentThread->space->userConds[index].deleteFlag = TRUE; // s
+	if (currentThread->space->userConds[index].inUse == TRUE){
+		printf("cond still in use\n");
+		return;
+	}
 	if (currentThread->space->userConds[index].deleteFlag && !currentThread->space->userConds[index].inUse){
 		printf("Condition  number %d, name %s is destroyed by %s \n", index, currentThread->space->userConds[index].userCond->getName(), currentThread->getName());
 		delete currentThread->space->userConds[index].userCond;
