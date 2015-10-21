@@ -16,7 +16,6 @@ void t1(){
 	Release(lock1);
 	DestroyLock(lock1);
 	Exit(0);
-	
 }
 
 void t2(){
@@ -24,15 +23,17 @@ void t2(){
 	Acquire(theLockThatDoesntExist);
 	Write("t2 acquiring lock1\n", 19, ConsoleOutput);
 	Acquire(lock1);
+	Write("t2 releasing lock1\n", 19, ConsoleOutput);
+	Release(lock1);
+	DestroyLock(lock1);
 	Exit(0);
-
 }
 
 int main() {
-  lock1 = CreateLock("Lock1");
+  lock1 = CreateLock("Lock1", 5, 0);
   theLockThatDoesntExist = lock1+10;
-	Fork(t1);
-  Fork(t2);
+	Fork(t1,0);
+  Fork(t2,0);
 	/*Write("Testing Locks\n", 14, ConsoleOutput)
 	lockNum = CreateLock("nameLock");
 	Acquire(lockNum);
