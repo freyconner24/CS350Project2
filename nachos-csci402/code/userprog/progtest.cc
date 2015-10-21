@@ -32,9 +32,24 @@ StartProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
 }
+printf("Starting User Program.\n");
     space = new AddrSpace(executable);
-    printf("Starting User Program.");
+
+    printf("Assigned space.\n");
     currentThread->space = space;
+
+    printf("Accessing process table.\n");
+
+    //first processCount == 1
+    ProcessEntry* processEntry = new ProcessEntry();
+    processEntry->space = space;
+    processEntry->spaceId = processCount;
+    // processEntry->sleepThreadCount = 0;
+    // processEntry->awakeThreadCount = 1;
+    processTable->processEntries[processCount] = processEntry;
+    processTable->processEntries[currentThread->space->processId]->stackLocations[currentThread->id] = space->StackTopForMain;
+
+    printf("Saving processEntry.\n");
 
     delete executable;			// close file
 
