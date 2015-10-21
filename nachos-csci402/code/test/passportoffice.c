@@ -166,7 +166,7 @@ void writeWithSize(char* string) {
 }
 
 char* currentThreadGetName(int currentThread) {
-    return threadNames[currentThread];;
+    return threadNames[currentThread];
 }
 
 /* CL: parameter: an int array that contains numbers of each clerk type
@@ -198,42 +198,39 @@ void clerkFactory(int countOfEachClerkType[]) {
     PrintString("Number of Senators = ", 20); PrintNum(senatorCount); PrintNl();
 }
 
-void createClerkThread(int type, int* clerkNumber) {
-    char clerkType[50], clerkName[50];
-    int i, temp, clerkTypeLength;
-    for(i = 0; i < clerkArray[type]; ++i) {
-        if(type == 0) {
-            clerkTypeLength = 16;
-            /* my_strcpy(clerkType, "ApplicationClerk", clerkTypeLength);*/
-            Fork((VoidFunctionPtr)ApplicationClerk, *clerkNumber);
-        } else if(type == 1) {
-            clerkTypeLength = 12;
-            /* my_strcpy(clerkType, "PictureClerk", clerkTypeLength);*/
-            Fork((VoidFunctionPtr)PictureClerk, *clerkNumber);
-        } else if(type == 2) {
-            clerkTypeLength = 13;
-            /* my_strcpy(clerkType, "PassportClerk", clerkTypeLength);*/
-            Fork((VoidFunctionPtr)PassportClerk, *clerkNumber);
-        } else if(type == 3) {
-            clerkTypeLength = 8;
-            /* my_strcpy(clerkType, "Cashier", clerkTypeLength);*/
-            Fork((VoidFunctionPtr)Cashier, *clerkNumber);
-        } else {
-            return;
-        }
-
-        /* my_strcpy(clerkTypes[*clerkNumber], clerkType, clerkTypeLength);*/
-        clerkTypesLengths[*clerkNumber] = clerkTypeLength;
-        *clerkNumber += 1;
-    }
-}
-
 void createClerkThreads() {
-    int type;
-    int clerkNumber;
-    for(type = 0; type < 4; ++type) {
-      PrintString("-------Clerk Created", 23); PrintNum(type); PrintNl();
-        createClerkThread(type, &clerkNumber);
+    int clerkType = 0, j = 0;
+    int clerkNumber = 0, clerkTypeLength;
+    for(clerkType = 0; clerkType < 4; ++clerkType) {
+        if(clerkType == 0) {
+            for(j = 0; j < clerkArray[clerkType]; ++j) {
+                clerkTypeLength = 16;
+                clerkTypesLengths[clerkNumber] = clerkTypeLength;
+                Fork((VoidFunctionPtr)ApplicationClerk, clerkNumber);
+                ++clerkNumber;
+            }
+        } else if(clerkType == 1) {
+            for(j = 0; j < clerkArray[clerkType]; ++j) {
+                clerkTypeLength = 12;
+                clerkTypesLengths[clerkNumber] = clerkTypeLength;
+                Fork((VoidFunctionPtr)PictureClerk,clerkNumber);
+                ++clerkNumber;
+            }
+        } else if(clerkType == 2) {
+            for(j = 0; j < clerkArray[clerkType]; ++j) {
+                clerkTypeLength = 13;
+                clerkTypesLengths[clerkNumber] = clerkTypeLength;
+                Fork((VoidFunctionPtr)PassportClerk,clerkNumber);
+                ++clerkNumber;
+            }
+        } else { /* i == 3 */
+            for(j = 0; j < clerkArray[clerkType]; ++j) {
+                clerkTypeLength = 8;
+                clerkTypesLengths[clerkNumber] = clerkTypeLength;
+                Fork((VoidFunctionPtr)Cashier,clerkNumber);
+                ++clerkNumber;
+            }
+        }
     }
 }
 
@@ -465,45 +462,55 @@ void clerkSignalsNextCustomer(int myLine) {
     Summary: logics for application clerk
     Return value: void */
 
-void hasSignaledString(char* threadName, int threadNameLength, int clerkNum, char* personName, int personNameLength, int custNumber) {
+void PrintCust(int isCustomer) {
+    if(isCustomer == 1) {
+        PrintString("Customer_", 9);
+    } else {
+        PrintString("Senator_", 8);
+    }
+}
+
+void hasSignaledString(int isCustomer, char* threadName, int threadNameLength, int clerkNum, int custNumber) {
     PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled a ", 17);
-    PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" to come to their counter. (", 28);
-    PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
+    PrintCust(isCustomer); PrintNum(custNumber); PrintString(" to come to their counter. (", 28);
+    PrintCust(isCustomer); PrintNum(custNumber); PrintNl();    
 }
 
-void givenSSNString(char* personName, int personNameLength, int custNumber, char* threadName, int threadNameLength, int clerkNum) {
-    PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" has given SSN ", 15);
-    PrintNum(custNumber); PrintString(" to ", 4); PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintNl();
+void givenSSNString(int isCustomer, int custNumber, char* threadName, int threadNameLength, int clerkNum) {
+    PrintCust(isCustomer); PrintNum(custNumber); PrintString(" has given SSN ", 15);
+    PrintNum(custNumber); PrintString(" to ", 4); PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintNl();    
 }
 
-void recievedSSNString(char* threadName, int threadNameLength, int clerkNum, int custNumber, char* personName, int personNameLength) {
+void recievedSSNString(int isCustomer, char* threadName, int threadNameLength, int clerkNum, int custNumber) {
     PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has received SSN ", 18); PrintNum(custNumber);
-    PrintString(" from ", 6); PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
+    PrintString(" from ", 6); PrintCust(isCustomer); PrintNum(custNumber); PrintNl();    
 }
 
 void ApplicationClerk() {
     int myLine = GetThreadArgs();
-    int i, numYields, personNameLength;
+    int i, numYields;
     char personName[50];
     int currentThread = globalThreadCount;
+    int isCustomer = 1, custNumber;
+
     /*my_strcpy(threadNames[currentThread], concatStringWithNumber("ApplicationClerk_", myLine), 0); /* TODO: change 0 */
     clerkIdMap[myLine] = currentThread;
     ++globalThreadCount;
 
     while(true) {
-        int custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
-        my_strcpy(personName, "Customer_", 9);
-        personNameLength = 9;
+        custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
         if(custNumber >= 50) {
-            my_strcpy(personName,"Senator_", 8);
-            personNameLength = 8;
+            isCustomer = 0;
+        } else {
+            isCustomer = 1;
         }
+
         clerkStates[myLine] = BUSY;
-        hasSignaledString("ApplicationClerk_", 17, myLine, personName, personNameLength, custNumber);
+        hasSignaledString(isCustomer, "ApplicationClerk_", 17, myLine, custNumber);
         Yield();
-        givenSSNString(personName, personNameLength, custNumber, "ApplicationClerk_", 17, myLine);
+        givenSSNString(isCustomer, custNumber, "ApplicationClerk_", 17, myLine);
         Yield();
-        recievedSSNString("ApplicationClerk_", 17, myLine, custNumber, personName, personNameLength);
+        recievedSSNString(isCustomer, "ApplicationClerk_", 17, myLine, custNumber);
 
 /* CL: random time for applicationclerk to process data */
         numYields = Rand(80, 20);
@@ -514,7 +521,8 @@ void ApplicationClerk() {
         customerAttributes[custNumber].applicationIsFiled = true;
         PrintString("ApplicationClerk_", 17); PrintNum(myLine);
         PrintString(" has recorded a completed application for ", 42);
-        PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
+        PrintCust(isCustomer); PrintNum(custNumber); PrintNl();
+        
 
         clerkSignalsNextCustomer(myLine);
     }
@@ -527,7 +535,7 @@ void ApplicationClerk() {
 
 void PictureClerk() {
     int myLine = GetThreadArgs();
-    int i = 0, numYields, probability, personNameLength;
+    int i = 0, numYields, probability, isCustomer = 1;
     char personName[50];
     int currentThread = globalThreadCount;
     /* my_strcpy(threadNames[currentThread], concatStringWithNumber("PictureClerk_", currentThread), 0);*/
@@ -536,39 +544,43 @@ void PictureClerk() {
 
     while(true) {
         int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
-        my_strcpy(personName, "Customer_", 9);
-        personNameLength = 9;
+
         if(custNumber >= 50) {
-                my_strcpy(personName, "Senator_", 8);
-                personNameLength = 8;
+            isCustomer = 0;
+        } else {
+            isCustomer = 1;
         }
+
         clerkStates[myLine] = BUSY;
-        hasSignaledString("PictureClerk_", 13, myLine, personName, personNameLength, custNumber);
+        hasSignaledString(isCustomer, "PictureClerk_", 13, myLine, custNumber);
         Yield();
-        givenSSNString(personName, personNameLength, custNumber, "PictureClerk_", 13, myLine);
+        givenSSNString(isCustomer, custNumber, "PictureClerk_", 13, myLine);
         Yield();
-        recievedSSNString("PictureClerk_", 13, myLine, custNumber, personName, personNameLength);
+        recievedSSNString(isCustomer, "PictureClerk_", 13, myLine, custNumber);
 
         numYields = Rand(80, 20);
 
         while(!customerAttributes[custNumber].likesPicture) {
             PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has taken a picture of ", 24);
-            PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
+            PrintCust(isCustomer); PrintNum(custNumber); PrintNl();
 
             probability = Rand(100, 0);
             if(probability >= 25) {
                 customerAttributes[custNumber].likesPicture = true;
-                PrintString("Customer_", 9); PrintNum(custNumber);  PrintString(" does like their picture from ", 30); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
+                PrintCust(isCustomer); PrintNum(custNumber);  PrintString(" does like their picture from ", 30); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
                 Yield();
-                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that Customer_", 29); PrintNum(custNumber); PrintString(" does like their picture\n", 25);
+                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20); PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does like their picture\n", 25);
                 /* CL: random time for pictureclerk to process data */
 
                 for(i = 0; i < numYields; ++i) {
                     Yield();
                 }
             }else{
-                PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" does not like their picture from ", 34); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
-                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20); PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" does not like their picture\n", 29);
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does not like their picture from ", 34); 
+                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
+                
+                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20); 
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does not like their picture\n", 29);
             }
         }
         clerkSignalsNextCustomer(myLine);
@@ -582,7 +594,7 @@ void PictureClerk() {
 
 void PassportClerk() {
     int myLine = GetThreadArgs();
-    int numYields, clerkMessedUp, i, personNameLength;
+    int numYields, clerkMessedUp, i, isCustomer = 1;
     char personName[50];
     int currentThread = globalThreadCount;
     /* my_strcpy(threadNames[currentThread], concatStringWithNumber("PassportClerk_", currentThread), 0);*/
@@ -591,18 +603,21 @@ void PassportClerk() {
 
     while(true) {
         int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
-        my_strcpy(personName, "Customer_", 9);
         if(custNumber >= 50) {
-            my_strcpy(personName, "Senator_", 8);
+            isCustomer = 0;
+        } else {
+            isCustomer = 1;
         }
-        hasSignaledString("PassportClerk_", 14, myLine, personName, personNameLength, custNumber);
+        hasSignaledString(isCustomer, "PassportClerk_", 14, myLine, custNumber);
         Yield();
-        givenSSNString(personName, personNameLength, custNumber, "PassportClerk_", 14, myLine);
+        givenSSNString(isCustomer, custNumber, "PassportClerk_", 14, myLine);
         Yield();
-        recievedSSNString("PassportClerk_", 14, myLine, custNumber, personName, personNameLength);
+        recievedSSNString(isCustomer, "PassportClerk_", 14, myLine, custNumber);
+
         if(customerAttributes[custNumber].likesPicture && customerAttributes[custNumber].applicationIsFiled) {
             /* CL: only determine that customer has app and pic completed by the boolean */
-            PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has determined that ", 21); PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" has both their application and picture completed\n",50);
+            PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has determined that ", 21);
+            PrintCust(isCustomer); PrintNum(custNumber); PrintString(" has both their application and picture completed\n",50);
             clerkStates[myLine] = BUSY;
 
             numYields = Rand(80, 20);
@@ -613,11 +628,11 @@ void PassportClerk() {
             }
             if(clerkMessedUp <= 5) { /* Send to back of line */
                 PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(": Messed up for ", 16);
-                PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(". Sending customer to back of line.\n", 36);
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /*TODO: customer uses this to know which back line to go to*/
             } else {
                 PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has recorded ", 14);
-                PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" passport documentation\n", 24);
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" passport documentation\n", 24);
                 for(i = 0; i < numYields; ++i) {
                     Yield();
                 }
@@ -626,7 +641,7 @@ void PassportClerk() {
             }
         } else {
             PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has determined that ", 21);
-            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" does not have both their application and picture completed\n", 60);
+            PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does not have both their application and picture completed\n", 60);
         }
         clerkSignalsNextCustomer(myLine);
     }
@@ -639,8 +654,8 @@ void PassportClerk() {
 
 void Cashier() {
     int myLine = GetThreadArgs();
-    int numYields, clerkMessedUp, i, personNameLength;
-    char personName[50];
+    int numYields, clerkMessedUp, i;
+    char personName[50], isCustomer = 1;
     int currentThread = globalThreadCount;
     /* my_strcpy(threadNames[currentThread], concatStringWithNumber("Cashier_", currentThread), 0);*/
     clerkIdMap[myLine] = currentThread;
@@ -648,24 +663,24 @@ void Cashier() {
 
     while(true) {
         int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
-        my_strcpy(personName, "Customer_", 9);
-        personNameLength = 9;
         if(custNumber >= 50) {
-            my_strcpy(personName, "Senator_", 8);
-            personNameLength = 8;
+            isCustomer = 0;
+        } else {
+            isCustomer = 1;
         }
-        hasSignaledString("Cashier_", 8, myLine, personName, personNameLength, custNumber);
+        hasSignaledString(isCustomer, "Cashier_", 8, myLine, custNumber);
         Yield();
-        givenSSNString(personName, personNameLength, custNumber, "Cashier_", 8, myLine);
+        givenSSNString(isCustomer, custNumber, "Cashier_", 8, myLine);
         Yield();
-        recievedSSNString("Cashier_", 8, myLine, custNumber, personName, personNameLength);
+        recievedSSNString(isCustomer, "Cashier_", 8, myLine, custNumber);
+
         if(customerAttributes[custNumber].hasCertification) {
             PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has verified that ", 19);
-            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString("has been certified by a PassportClerk\n", 38);
+            PrintCust(isCustomer); PrintNum(custNumber); PrintString("has been certified by a PassportClerk\n", 38);
             customerAttributes[custNumber].money -= 100;/* CL: cashier takes money from customer */
             PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has received the $100 from ", 28);
-            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString("after certification\n", 20);
-            PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" has given ", 11); PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" $100\n", 6);
+            PrintCust(isCustomer); PrintNum(custNumber); PrintString("after certification\n", 20);
+            PrintCust(isCustomer); PrintNum(custNumber); PrintString(" has given ", 11); PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" $100\n", 6);
 
             clerkMoney[myLine] += 100;
             clerkStates[myLine] = BUSY;
@@ -675,22 +690,20 @@ void Cashier() {
                 Yield();
             }
             clerkMessedUp = Rand(100, 0);
-                           if(custNumber > 49){
-              clerkMessedUp = 100;
+            if(custNumber > 49){
+                clerkMessedUp = 100;
             }
             if(clerkMessedUp <= 5) { /* Send to back of line*/
                 PrintString("Cashier_", 8); PrintNum(myLine); PrintString(": Messed up for ", 16);
-                PrintString(personName, personNameLength); PrintNum(custNumber);
+                PrintCust(isCustomer); PrintNum(custNumber);
                 PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /* TODO: customer uses this to know which back line to go to*/
             } else {
                 PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has provided ", 11);
-                PrintString(personName, personNameLength); PrintNum(custNumber);
-                PrintString("their completed passport\n", 25);
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString("their completed passport\n", 25);
                 Yield();
                 PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has recorded that ", 19);
-                PrintString(personName, personNameLength); PrintNum(custNumber);
-                PrintString(" has been given their completed passport\n", 41);
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" has been given their completed passport\n", 41);
                 customerAttributes[custNumber].clerkMessedUp = false;
                 customerAttributes[custNumber].isDone = true;
             }
