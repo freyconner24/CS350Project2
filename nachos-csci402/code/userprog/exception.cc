@@ -399,7 +399,7 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_Yield:
             DEBUG('a', "Yield syscall.\n");
-            printf("YIELD IS CALLED\n");
+            //printf("YIELD IS CALLED\n");
             kernelLock->Acquire();
             ProcessEntry* processEntry = processTable->processEntries[currentThread->space->processId];
             processEntry->sleepThreadCount += 1;

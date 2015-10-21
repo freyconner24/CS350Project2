@@ -41,7 +41,6 @@ int CreateLock_sys(int vaddr, int size, int appendNum) {
 	DEBUG('a', " Lock has number %d and name %s\n", currentLockIndex, buffer);
 	DEBUG('l', " Lock has number %d and name %s\n", currentLockIndex, buffer);
 	printf(" Lock  number %d  and name %s is created by %s \n", currentLockIndex, currentThread->space->userLocks[currentLockIndex].userLock->getName(), currentThread->getName());
-
 	currentThread->space->locksLock->Release(); //release kernel lock
 	return currentLockIndex;
 }

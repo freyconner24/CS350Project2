@@ -58,6 +58,10 @@ void Wait_sys(int lockIndex, int conditionIndex) {
 		currentThread->space->condsLock->Release();
 		return;
 	}
+	printf("LockIndex: %d\n", lockIndex);
+	printf("LockCount: %d\n", currentThread->space->lockCount);
+	printf("ConditionIndex: %d\n", conditionIndex);
+	printf("ConditionCount: %d\n", currentThread->space->condCount);
 	if (lockIndex < 0 || lockIndex >= currentThread->space->lockCount){
 		printf("Wait::invalid lock\n");
 		currentThread->space->condsLock->Release();
