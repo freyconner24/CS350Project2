@@ -480,17 +480,17 @@ void PrintCust(int isCustomer) {
 void hasSignaledString(int isCustomer, char* threadName, int threadNameLength, int clerkNum, int custNumber) {
     PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled a ", 17);
     PrintCust(isCustomer); PrintNum(custNumber); PrintString(" to come to their counter. (", 28);
-    PrintCust(isCustomer); PrintNum(custNumber); PrintNl();    
+    PrintCust(isCustomer); PrintNum(custNumber); PrintNl();
 }
 
 void givenSSNString(int isCustomer, int custNumber, char* threadName, int threadNameLength, int clerkNum) {
     PrintCust(isCustomer); PrintNum(custNumber); PrintString(" has given SSN ", 15);
-    PrintNum(custNumber); PrintString(" to ", 4); PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintNl();    
+    PrintNum(custNumber); PrintString(" to ", 4); PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintNl();
 }
 
 void recievedSSNString(int isCustomer, char* threadName, int threadNameLength, int clerkNum, int custNumber) {
     PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has received SSN ", 18); PrintNum(custNumber);
-    PrintString(" from ", 6); PrintCust(isCustomer); PrintNum(custNumber); PrintNl();    
+    PrintString(" from ", 6); PrintCust(isCustomer); PrintNum(custNumber); PrintNl();
 }
 
 void ApplicationClerk() {
@@ -529,7 +529,7 @@ void ApplicationClerk() {
         PrintString("ApplicationClerk_", 17); PrintNum(myLine);
         PrintString(" has recorded a completed application for ", 42);
         PrintCust(isCustomer); PrintNum(custNumber); PrintNl();
-        
+
 
         clerkSignalsNextCustomer(myLine);
     }
@@ -583,10 +583,10 @@ void PictureClerk() {
                     Yield();
                 }
             }else{
-                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does not like their picture from ", 34); 
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does not like their picture from ", 34);
                 PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
-                
-                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20); 
+
+                PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20);
                 PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does not like their picture\n", 29);
             }
         }
