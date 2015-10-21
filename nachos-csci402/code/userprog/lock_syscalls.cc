@@ -31,6 +31,7 @@ int CreateLock_sys(int vaddr, int size, int appendNum) {
 	currentThread->space->userLocks[currentThread->space->lockCount].userLock = new Lock(buffer); // instantiate new lock
 	currentThread->space->userLocks[currentThread->space->lockCount].deleteFlag = FALSE; // indicate the lock is not to be deleted
 	currentThread->space->userLocks[currentThread->space->lockCount].inUse = FALSE; // indicate the lock is not in use
+	currentThread->space->userLocks[currentThread->space->lockCount].isDeleted = FALSE; // indicate the lock is not in use
 	++(currentThread->space->maxLockCount);
 	int currentLockIndex = currentThread->space->lockCount; // save the currentlockcount to be returned later
 	++(currentThread->space->lockCount);
@@ -48,7 +49,7 @@ void Acquire_sys(int index) {
 		printf("acquiring invalid lock\n");
 		return;
 	}
-	if (currentThread->space->userLocks[index].userLock == NULL){
+	if (currentThread->space->userLocks[index].isDeleted == TRUE){
 		printf("acquiring destroyed lock\n");
 		return;
 	}
@@ -75,7 +76,7 @@ void Release_sys(int index) {
 		printf("releasing invalid lock\n");
 		return;
 	}
-	if (currentThread->space->userLocks[index].userLock == NULL){
+	if (currentThread->space->userLocks[index].isDeleted == TRUE){
 		printf("releasing destroyed lock\n");
 		return;
 	}
@@ -100,7 +101,7 @@ void DestroyLock_sys(int index) {
 		printf("destroying invalid lock\n");
 		return;
 	}
-	if (currentThread->space->userLocks[index].userLock == NULL){
+	if (currentThread->space->userLocks[index].isDeleted == TRUE){
 		printf("destroying invalid lock\n");
 		return;
 	}
@@ -112,6 +113,7 @@ void DestroyLock_sys(int index) {
 	}
 	if (currentThread->space->userLocks[index].deleteFlag && !currentThread->space->userLocks[index].inUse){
 		printf("Lock  number %d  and name %s is destroyed by %s \n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
+		currentThread->space->userLocks[index].isDeleted = TRUE;
 		delete currentThread->space->userLocks[index].userLock;
 	 	--(currentThread->space->lockCount);
 	}

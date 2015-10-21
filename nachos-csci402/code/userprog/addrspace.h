@@ -59,6 +59,7 @@ class AddrSpace {
     int maxLockCount;
     UserLock* userLocks;
     UserCond* userConds;
+    int StackTopForMain;
  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
