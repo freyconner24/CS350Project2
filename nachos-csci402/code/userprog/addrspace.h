@@ -43,6 +43,8 @@ class AddrSpace {
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch
     Table fileTable;			// Table of openfiles
+
+    //Functions and variables added to addrspace.h
     unsigned int getNumPages() { return numPages; }
     int processId;
     int spaceId;

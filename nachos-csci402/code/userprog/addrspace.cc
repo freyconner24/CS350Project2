@@ -165,7 +165,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     StackTopForMain =  divRoundUp(size, PageSize);
 
     for (i = 0; i < numPages; i++) {
-        cout << "AddrSpace::numPage for(...): " << i << endl;
+        //cout << "AddrSpace::numPage for(...): " << i << endl;
         tempIndex = bitmap->Find();
         if (tempIndex == -1){
             DEBUG('g', "PAGETABLE TOO BIG");

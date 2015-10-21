@@ -418,7 +418,12 @@ void ExceptionHandler(ExceptionType which) {
             DEBUG('b', "Fork syscall.\n");
             //cout << "Fork Syscall, total threadCount: " << totalThreadCount << endl;
             virtualAddress = machine->ReadRegister(4);
-            //cout << "Exception::virtualAddress: " << virtualAddress << endl;
+            if(virtualAddress == 0){
+              cout << "No argument passed to Fork. Returning." << endl;
+              return;
+            }
+
+
             Thread* kernelThread = new Thread("KernelThread");
             threadArgs[kernelThread->id] = machine->ReadRegister(5);
             cout << "This is the value of thread args: " << threadArgs[kernelThread->id] << "::::" << kernelThread->id << endl;
@@ -469,9 +474,7 @@ void ExceptionHandler(ExceptionType which) {
               // processEntry->awakeThreadCount = 1;
               processTable->processEntries[processCount] = processEntry;
 
-
               processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id] = as->StackTopForMain;
-              // cout << "Start stack location for Exec_thread: " << processTable->processEntries[newThread->space->processId]->stackLocations[newThread->id]<< endl;
 
               rv = newThread->space->spaceId;
               newThread->Fork((VoidFunctionPtr)exec_thread, 0);
@@ -507,13 +510,10 @@ void ExceptionHandler(ExceptionType which) {
                       bitmap->Clear(machine->pageTable[i].physicalPage); //need processCount and processIndex
                   }*/
                   DEBUG('b', "Not last process and last thread, deleting process.\n");
-                  //cout << "Not last process and last thread, deleting process." << endl;
                   //delete processTable->processEntries[currentThread->space->spaceId];
-
                   //processTable->processEntries[currentThread->space->spaceId] = NULL;
                   //cout << "About to delete currentThread->space" << endl;
                   delete currentThread->space;
-                  //cout << "Deleted currentThread->space" << endl;
                   processTable->runningProcessCount -= 1;
                   kernelLock->Release();
                   currentThread->Finish();
@@ -527,10 +527,8 @@ void ExceptionHandler(ExceptionType which) {
                   //if the addr space matches the space of lock and cv
                   // delete lock and cv and set addrspace to null
 
-                  DEBUG('b', "Not last thread in a process, deleting thread.\n");
-                //cout <<   "Not last thread in a process, deleting thread." << endl;
+              DEBUG('b', "Not last thread in a process, deleting thread.\n");
               currentThread->space->DeleteCurrentThread();
-              //TODO differentiate between main and other threads and fork threads
               kernelLock->Release();
               currentThread->Finish();
 
