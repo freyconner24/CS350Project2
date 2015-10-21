@@ -1,4 +1,4 @@
-/* lock_test.c
+/* condtest.c
  *	Simple program to test the file handling system calls
  */
 
@@ -6,23 +6,14 @@
 
 int lock1;
 int theLockThatDoesntExist;
-int check = 0;
-int i = 0;
 
 void t1(){
-	Write("t1 releasing lock1 before acquiring\n", 35, ConsoleOutput);
-	Release(lock1);
 	Write("t1 acquiring theLockThatDoesntExist\n", 36, ConsoleOutput);
 	Acquire(theLockThatDoesntExist);
 	Write("t1 acquiring lock1\n", 19, ConsoleOutput);
 	Acquire(lock1);
-	for (i = 0; i < 50; ++i)
-		++check;
-	Write("t1 releasing theLockThatDoesntExist\n", 36, ConsoleOutput);
-	Release(theLockThatDoesntExist);
 	Write("t1 releasing lock1\n", 19, ConsoleOutput);
 	Release(lock1);
-	Write("t1 destroying lock1\n", 19, ConsoleOutput);
 	DestroyLock(lock1);
 	Exit(0);
 }
@@ -32,8 +23,6 @@ void t2(){
 	Acquire(theLockThatDoesntExist);
 	Write("t2 acquiring lock1\n", 19, ConsoleOutput);
 	Acquire(lock1);
-	for ( i = 0; i < 1; ++i)
-		check*=2;
 	Write("t2 releasing lock1\n", 19, ConsoleOutput);
 	Release(lock1);
 	DestroyLock(lock1);
@@ -57,7 +46,6 @@ int main() {
 	Exec("../test/halt");
 	Exec("../test/halt");
 	*/
-	PrintNum(check);
 	Write("Finshing lockfiles.c\n", 22, ConsoleOutput);
 	Exit(0);
 }

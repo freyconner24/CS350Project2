@@ -33,12 +33,14 @@ struct UserLock {
 	bool deleteFlag;
 	bool inUse;
 	Lock* userLock;
+	bool isDeleted;
 };
 
 struct UserCond {
 	bool deleteFlag;
 	bool inUse;
 	Condition* userCond;
+	bool isDeleted;
 };
 
 class ProcessEntry {

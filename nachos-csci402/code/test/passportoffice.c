@@ -232,6 +232,7 @@ void createClerkThreads() {
     int type;
     int clerkNumber;
     for(type = 0; type < 4; ++type) {
+      PrintString("-------Clerk Created", 23); PrintNum(type); PrintNl();
         createClerkThread(type, &clerkNumber);
     }
 }
@@ -246,7 +247,7 @@ void createClerkLocksAndConditions() {
         } else {
             cpyLen = 2;
         }
-        
+
         clerkLock[i] = CreateLock("ClerkLock", 9 + cpyLen, i);
 
         clerkCV[i] = CreateCondition("ClerkCV", 7 + cpyLen, i);
@@ -271,6 +272,7 @@ void createClerkLocksAndConditions() {
 void createCustomerThreads() {
     int i;
     for(i = 0; i < customerCount; i++){
+      PrintString("+++++Cust Created\n", 18); PrintNum(i);
         Fork((VoidFunctionPtr)Customer, i);
     }
 }
@@ -281,6 +283,7 @@ void createCustomerThreads() {
 void createSenatorThreads(){
     int i;
     for(i = 0; i < senatorCount; i++){
+      PrintString("+++++Sena Created\n", 18); PrintNum(i);
         Fork((VoidFunctionPtr)Senator, i + 50);
     }
 }
@@ -462,7 +465,7 @@ void clerkSignalsNextCustomer(int myLine) {
     Return value: void */
 
 void hasSignaledString(char* threadName, int threadNameLength, int clerkNum, char* personName, int personNameLength, int custNumber) {
-    PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled a ", 17); 
+    PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled a ", 17);
     PrintString(personName, personNameLength); PrintString(" to come to their counter. (", 28);
     PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
 }
@@ -479,7 +482,6 @@ void recievedSSNString(char* threadName, int threadNameLength, int clerkNum, int
 
 void ApplicationClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
     int i, numYields, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -488,6 +490,7 @@ void ApplicationClerk() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
         my_strcpy(personName, "Customer_", 9);
         personNameLength = 9;
         if(custNumber >= 50) {
@@ -508,12 +511,13 @@ void ApplicationClerk() {
         }
 
         customerAttributes[custNumber].applicationIsFiled = true;
-        PrintString("ApplicationClerk_", 17); PrintNum(myLine); 
-        PrintString(" has recorded a completed application for ", 42); 
+        PrintString("ApplicationClerk_", 17); PrintNum(myLine);
+        PrintString(" has recorded a completed application for ", 42);
         PrintString(personName, personNameLength); PrintNum(custNumber); PrintNl();
 
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /* CL: Parameter: int myLine (line number of clerk)
@@ -522,7 +526,6 @@ void ApplicationClerk() {
 
 void PictureClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
     int i = 0, numYields, probability, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -531,6 +534,7 @@ void PictureClerk() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
         my_strcpy(personName, "Customer_", 9);
         personNameLength = 9;
         if(custNumber >= 50) {
@@ -568,6 +572,7 @@ void PictureClerk() {
         }
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /* CL: Parameter: int myLine (line number of clerk)
@@ -576,7 +581,6 @@ void PictureClerk() {
 
 void PassportClerk() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
     int numYields, clerkMessedUp, i, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -585,6 +589,7 @@ void PassportClerk() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
         my_strcpy(personName, "Customer_", 9);
         if(custNumber >= 50) {
             my_strcpy(personName, "Senator_", 8);
@@ -610,7 +615,7 @@ void PassportClerk() {
                 PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /*TODO: customer uses this to know which back line to go to*/
             } else {
-                PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has recorded ", 14); 
+                PrintString("PassportClerk_", 14); PrintNum(myLine); PrintString(" has recorded ", 14);
                 PrintString(personName, personNameLength); PrintNum(custNumber); PrintString(" passport documentation\n", 24);
                 for(i = 0; i < numYields; ++i) {
                     Yield();
@@ -624,6 +629,7 @@ void PassportClerk() {
         }
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /*CL: Parameter: int myLine (line number of clerk)
@@ -632,7 +638,6 @@ void PassportClerk() {
 
 void Cashier() {
     int myLine = GetThreadArgs();
-    int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
     int numYields, clerkMessedUp, i, personNameLength;
     char personName[50];
     int currentThread = globalThreadCount;
@@ -641,6 +646,7 @@ void Cashier() {
     ++globalThreadCount;
 
     while(true) {
+        int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
         my_strcpy(personName, "Customer_", 9);
         personNameLength = 9;
         if(custNumber >= 50) {
@@ -672,13 +678,13 @@ void Cashier() {
               clerkMessedUp = 100;
             }
             if(clerkMessedUp <= 5) { /* Send to back of line*/
-                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(": Messed up for ", 16); 
+                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(": Messed up for ", 16);
                 PrintString(personName, personNameLength); PrintNum(custNumber);
                 PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /* TODO: customer uses this to know which back line to go to*/
             } else {
                 PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has provided ", 11);
-                PrintString(personName, personNameLength); PrintNum(custNumber); 
+                PrintString(personName, personNameLength); PrintNum(custNumber);
                 PrintString("their completed passport\n", 25);
                 Yield();
                 PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has recorded that ", 19);
@@ -690,6 +696,7 @@ void Cashier() {
         }
         clerkSignalsNextCustomer(myLine);
     }
+    Exit(0);
 }
 
 /*CL: Parameter: int custNumber
@@ -783,7 +790,7 @@ void Customer() {
                 bribe = true;
                 Wait(clerkBribeLineCV[myLine], clerkLineLock);
             } else {
-                PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" has gotten in regular line for ", 19); 
+                PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" has gotten in regular line for ", 19);
                 PrintString(clerkTypes[myLine], clerkTypesLengths[myLine]); PrintString("_", 1); PrintNum(myLine); PrintNl();
                 clerkLineCount[myLine]++;
                 Wait(clerkLineCV[myLine], clerkLineLock);
@@ -827,6 +834,7 @@ void Customer() {
     }
     /* CL: CUSTOMER IS DONE! YAY!*/
     PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" is leaving the Passport Office.\n", 33);
+    Exit(0);
 }
 
 /*CL: Parameter: int custNumber (because we treat senators as customers)
@@ -959,6 +967,7 @@ void Senator(){
         Release(senatorLock);
     }
     PrintString("Senator_", 8); PrintNum(custNumber); PrintString(" is leaving the Passport Office.\n", 33);
+    Exit(0);
 }
 
 void wakeUpClerks() {
@@ -1034,6 +1043,7 @@ void Manager() {
             Yield();
         }
     } while(!customersAreAllDone());
+    Exit(0);
 }
 
 /*CL: Parameter: -
@@ -1079,6 +1089,7 @@ int main() {
     outsideLock = CreateLock("OutsideLock", 12, 0);
     senatorLock = CreateLock("SenatorLock", 12, 0);
     senatorLineCV = CreateCondition("SenatorLineCV", 13, 0);
+    Part2();
     /*Write("Testing Locks\n", 14, ConsoleOutput);
 
     lockNum = CreateLock("nameLock");
@@ -1091,4 +1102,6 @@ int main() {
     Write("Locks complete\n", 15, ConsoleOutput);
     */
 /*      Exec('halt');*/
+
+    Exit(0);
 }
