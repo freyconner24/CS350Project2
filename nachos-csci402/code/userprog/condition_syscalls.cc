@@ -23,10 +23,10 @@ int CreateCondition_sys(int vaddr, int size, int appendNum) {
 		return -1;
 	}
 
-	char* buffer = new char[BUFFER_SIZE + 1];
-	buffer[BUFFER_SIZE] = '\0'; //end the char array with a null character
+	char* buffer = new char[size + 1];
+	buffer[size] = '\0'; //end the char array with a null character
 
-	if(copyin(vaddr, BUFFER_SIZE, buffer) == -1) { //copy contents of the virtual addr (ReadRegister(4)) to the buffer
+	if(copyin(vaddr, size, buffer) == -1) { //copy contents of the virtual addr (ReadRegister(4)) to the buffer
 		printf("CreateCondition::copyin failed\n");
 		delete [] buffer;
 		currentThread->space->condsLock->Release();
@@ -41,7 +41,6 @@ int CreateCondition_sys(int vaddr, int size, int appendNum) {
 
 	currentThread->space->userConds[currentThread->space->condCount].userCond = new Condition(buffer); // instantiate new lock
 	currentThread->space->userConds[currentThread->space->condCount].deleteFlag = FALSE; // indicate the lock is not to be deleted
-	// currentThread->space->userConds[currentThread->space->condCount].inUse = FALSE; // indicate the lock is not in use
 	currentThread->space->userConds[currentThread->space->condCount].isDeleted = FALSE; // indicate the lock is not in use
 	int currentCondIndex = currentThread->space->condCount; // save the currentlockcount to be returned later
 	currentThread->space->condCount++;
@@ -77,15 +76,8 @@ void Wait_sys(int lockIndex, int conditionIndex) {
 		currentThread->space->condsLock->Release();
 		return;
 	}
-	// if(currentThread->space->userConds[conditionIndex].inUse == TRUE){
-	// 	printf("cond already waiting\n");
-	// 	currentThread->space->condsLock->Release();
-	// 	return;
-	// }
 
 	// how does a lock use a wait?
-	// currentThread->space->userConds[conditionIndex].inUse = TRUE;
-
 	currentThread->space->condsLock->Release();//release kernel lock
 	printf("Wait::Condition  number %d, name %s is waited on by %s \n", conditionIndex, currentThread->space->userConds[conditionIndex].userCond->getName(), currentThread->getName());
 
@@ -115,13 +107,6 @@ void Signal_sys(int lockIndex, int conditionIndex) {
 		currentThread->space->condsLock->Release();
 		return;
 	}
-	// if(currentThread->space->userConds[conditionIndex].inUse == TRUE){
-	// 	printf("cond not waiting, can't signal\n");
-	// 	currentThread->space->condsLock->Release();
-	// 	return;
-	// }
-
-	// currentThread->space->userConds[conditionIndex].inUse = FALSE;
 
 	currentThread->space->condsLock->Release(); //release kernel lock
 	printf("Condition  number %d, name %s is signalled by %s\n", conditionIndex, currentThread->space->userConds[conditionIndex].userCond->getName(), currentThread->getName());
@@ -130,6 +115,13 @@ void Signal_sys(int lockIndex, int conditionIndex) {
 	// 	//updateProcessThreadCounts(currentThread->space, AWAKE);
 	// }
 	currentThread->space->userConds[conditionIndex].userCond->Signal(currentThread->space->userLocks[lockIndex].userLock); // acquire userlock at index
+
+	if (currentThread->space->userConds[index].deleteFlag && 
+		currentThread->space->userConds[index].userCond->waitQueueIsEmpty()){
+		printf("DestroyCondition::Condition  number %d, name %s is destroyed by %s \n", index, currentThread->space->userConds[index].userCond->getName(), currentThread->getName());
+		delete currentThread->space->userConds[index].userCond;
+		currentThread->space->userConds[index].isDeleted = TRUE;
+	}
 }
 
 void Broadcast_sys(int lockIndex, int conditionIndex) {
@@ -156,12 +148,16 @@ void Broadcast_sys(int lockIndex, int conditionIndex) {
 		return;
 	}
 
-	// currentThread->space->userConds[conditionIndex].inUse = TRUE;
-
 	currentThread->space->condsLock->Release();//release kernel lock
 	printf("Broadcast::Condition  number %d, name %s is broadcast by %s \n", conditionIndex, currentThread->space->userConds[conditionIndex].userCond->getName(), currentThread->getName());
 
 	currentThread->space->userConds[conditionIndex].userCond->Broadcast(currentThread->space->userLocks[lockIndex].userLock); // acquire userlock at index
+
+	if (currentThread->space->userConds[index].deleteFlag){
+		printf("DestroyCondition::Condition  number %d, name %s is destroyed by %s \n", index, currentThread->space->userConds[index].userCond->getName(), currentThread->getName());
+		delete currentThread->space->userConds[index].userCond;
+		currentThread->space->userConds[index].isDeleted = TRUE;
+	}
 }
 
 void DestroyCondition_sys(int index) {
@@ -172,19 +168,16 @@ void DestroyCondition_sys(int index) {
 		return;
 	}
 	if (currentThread->space->userConds[index].isDeleted == TRUE){
-		printf("DestroyCondition::destroying invalid cond\n");
+		printf("DestroyCondition::condition is already destroyed\n");
 		currentThread->space->condsLock->Release();
 		return;
 	}
-	currentThread->space->userConds[index].deleteFlag = TRUE; // s
 	if (!currentThread->space->userConds[index].userCond->waitQueueIsEmpty()){
 		printf("DestroyCondition::cond still in use\n");
+		currentThread->space->userConds[index].deleteFlag = TRUE; // s
 		currentThread->space->condsLock->Release();
 		return;
 	}
-	if (currentThread->space->userConds[index].deleteFlag){
-		printf("DestroyCondition::Condition  number %d, name %s is destroyed by %s \n", index, currentThread->space->userConds[index].userCond->getName(), currentThread->getName());
-		delete currentThread->space->userConds[index].userCond;
-	}
+	
 	currentThread->space->condsLock->Release();//release kernel lock
 }

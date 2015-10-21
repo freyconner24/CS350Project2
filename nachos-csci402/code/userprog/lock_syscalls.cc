@@ -103,6 +103,12 @@ void Release_sys(int index) {
 	}
 	currentThread->space->locksLock->Release();//release kernel lock
 	currentThread->space->userLocks[index].userLock->Release(); // release userlock at index
+
+	if(currentThread->space->userLocks[index].userLock->lockStatus == currentThread->space->userLocks[index].userLock->BUSY) {
+		printf(" Lock  number %d  and name %s is destroyed by %s \n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
+		currentThread->space->userLocks[index].isDeleted = TRUE;
+		delete currentThread->space->userLocks[index].userLock;	
+	}
 }
 
 void DestroyLock_sys(int index) {
@@ -122,8 +128,5 @@ void DestroyLock_sys(int index) {
 	if (currentThread->space->userLocks[index].userLock->lockStatus == currentThread->space->userLocks[index].userLock->BUSY){
 		printf(" Lock number %d and name %s still in use-----------------------\n", index, currentThread->space->userLocks[index].userLock->getName());
 	}
-	printf(" Lock  number %d  and name %s is destroyed by %s \n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
-	currentThread->space->userLocks[index].isDeleted = TRUE;
-	delete currentThread->space->userLocks[index].userLock;
 	currentThread->space->locksLock->Release();//release kernel lock
 }
