@@ -538,7 +538,9 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_CreateLock:
             DEBUG('b', "CreateLock syscall.\n");
-            rv = CreateLock_sys(machine->ReadRegister(4));
+            rv = CreateLock_sys(machine->ReadRegister(4),
+                                machine->ReadRegister(5),
+                                machine->ReadRegister(6));
             break;
         case SC_Acquire:
             DEBUG('b', "Acquire syscall.\n");
@@ -554,7 +556,9 @@ void ExceptionHandler(ExceptionType which) {
             break;
         case SC_CreateCondition:
             DEBUG('b', "CreateCondition syscall.\n");
-            rv = CreateCondition_sys(machine->ReadRegister(4));
+            rv = CreateCondition_sys(machine->ReadRegister(4),
+                                machine->ReadRegister(5),
+                                machine->ReadRegister(6));
             break;
         case SC_Wait:
             DEBUG('b', "Wait syscall.\n");

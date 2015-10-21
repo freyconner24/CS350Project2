@@ -7,7 +7,7 @@
 
 #define BUFFER_SIZE 32
 
-int CreateCondition_sys(int vaddr) {
+int CreateCondition_sys(int vaddr, int size, int appendNum) {
 	kernelLock->Acquire(); //CL: acquire kernelLock so that no other thread is running on kernel mode
 
 	char* buffer = new char[BUFFER_SIZE + 1];

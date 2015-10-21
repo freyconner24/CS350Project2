@@ -122,6 +122,7 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   pageTableLock->Acquire();
   lockCount = 0;
   condCount = 0;
+  maxLockCount = 0;
   userLocks = new UserLock[MAX_LOCK_COUNT];
   userConds = new UserCond[MAX_COND_COUNT];
     //processTable->runningProcessCount++;
@@ -230,6 +231,8 @@ AddrSpace::~AddrSpace()
     }
   }
   delete pageTable;
+  delete [] userLocks;
+  delete [] userConds;
 }
 
 //----------------------------------------------------------------------
