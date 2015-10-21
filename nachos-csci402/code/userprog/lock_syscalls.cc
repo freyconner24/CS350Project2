@@ -18,7 +18,7 @@ int CreateLock_sys(int vaddr, int size, int appendNum) {
 	}
 	char* buffer = new char[size + 1];
 	buffer[size] = '\0'; //end the char array with a null character
-
+	
 	if (copyin(vaddr, size, buffer) == -1){
 		printf("%s","Bad pointer passed to to write: data not written\n");
 		delete[] buffer;
