@@ -30,7 +30,7 @@ Another thing that we needed to do for this project is modify the pagetable and 
 
 We also needed to create a ProcessTable inside AddrSpace.cc/.h in order to support multiple processes.  The ProcessTable struct contains a list of Process structs and a count of the number of processes.  Each Process inside the process table has a list of stack locations which point to the top of the stack for each thread inside the current process.  The process also maintains a thread count which is used by the Exit syscall to that the program knows how to exit.
 
-The three big syscalls are Fork, Exit, and Exec.  We implemented Fork by passing a function void pointer and a user-specified integer into the syscall. The void pointer to a function is going to be forked on the kernel level, and the user-specified integer is used so the user can assign unique identifiers to threads. Fork syscall then closely follows the student documentation. The Exec again closely follows the implementation in the student documentation. There’s a process table declared as a kernel variable, and every new process is added to this table as a processEntry. Every processEntry also has a stack location array which keeps track of the stack location start for each thread’s stack. This can be used later to delete threads, and delete entire processes. Exit
+The three big syscalls are Fork, Exit, and Exec.  We implemented Fork by passing a function void pointer and a user-specified integer into the syscall. The void pointer to a function is going to be forked on the kernel level, and the user-specified integer is used so the user can assign unique identifiers to threads. Fork syscall then closely follows the student documentation. The Exec again closely follows the implementation in the student documentation. There’s a process table declared as a kernel variable, and every new process is added to this table as a processEntry. Every processEntry also has a stack location array which keeps track of the stack location start for each thread’s stack. This can be used later to delete threads, and delete entire processes. Exit has three cases, and is called when any thread finishes. These test cases are whether a thread is the last thread in a process, whether a thread is the last process, but it is not the last process, and finally if a thread is the last thread in the last process. For the first case, only the thread and the thread’s stack is deleted, in the second case, the thread’s entire address space is deleted along with the process, and in the last case, the entire program is halted.
 
 In order to complete this project we also needed to update the passportoffice.cc.  To do this, we converted our threadtest.cc file from project 1 into C code in order to show that we can access the syscalls without an object oriented paradigm as a normal OS would.  We then had to convert all of our previous C++ code into C by converting objects to structs and using arrays instead of vectors etc.  We then had to convert all of our calls to Locks, Conditions, Threads, Fork, etc. into our custom syscalls that work with C.  We then must test the passportoffice.c so that it performs the same way that our passport office performed in project 1.
 
@@ -72,8 +72,10 @@ Every thread gets an entry in the processTable->processEntries to
 indicate the top of the stack location for every thread, therefore the very first process get their AddressSpace added to the process table and the first thread gets their stack location added to the processEntries
 In ../threads/
 + thread.h
+
 + thread.cc
 + system.h
+Kernel wide variables added here
 + system.cc
 In ../test/
 + start.s
@@ -88,6 +90,7 @@ In ../userprog/
 + condtest.c
 + passportRunner.c
 + exectests.c
++ forktests.c
 
 
 + Data Structures added, and the file they were added to.
@@ -172,7 +175,7 @@ int stackLocations[1000];
 + Functions added and in which file.
 + Functions modified and in which file.
 + int my_strcmp(char s1[], const char s2[], int len)
-+ basically the ANSI C strcmp functionwith some slight modifications to support Nachos since there is no heap
++ basically the ANSI C strcmp function with some slight modifications to support Nachos since there is no heap
 + int my_strcpy(char s1[], const char s2[], int len)
 + basically the ANSI C strncpy function with some slight modifications to support Nachos since there is no heap
 
@@ -264,7 +267,6 @@ The sum for thread 1 and 2 should be 60 at some point, but 50 or 10 can be print
 All threads exits
 
 + to test condition variables, run with nachos -x ..test/condtest
-+ to test condetst run: nachos -x ../test/condtest -d r
 Saving processEntry.
 ++++++++ Starting the condition variable testsuite ++++++++
 Creating Condition and Lock with bad string lengths
@@ -361,6 +363,13 @@ Machine halting!
 + The above output shows the output of the condition variable test suite.  The scoped calls “Wait::Condition number 0, name Condition2 is waiting” shows the print from the current function and which condition and which name it is.  The “>>>>>>>>>>>>>” statements show what is actually happening in the program with the threads acquiring locks and signalling each other.  We can assert that this is correct because we get the expected behavior with 2 locks and a CV when running the program.  The way the testsuite is set up is that we test for edge cases first––bad values, long char arrays, etc––then we test for creating and destroying valid conditions.  Then we test that the conditions are used correctly with the correct behavior.
 
 - Describe the testing output. You don't have to dump all the output info. Just make sure your description can exactly reflect your output. The grader of your submission will be wanting to compare the output they get with what you say the output is.
+
+
+To test Exec syscall, run: nachos -x ../test/exectests
+The tests should show that it executes the first two files, as they exist in the test directory, while it will output that it cannot read the files for the last three cases, as the input are not file names anywhere.
+
+To test Fork syscall, run: nachos -x ../test/condtests
+    The test should show that fork works as it is able to call helloworld, and then the the two forks with addOneAndPrintNumber prove that forks work in the same addressspace and can access the same variables in the same process
 
 VI. Discussion:
 + Experiment expectation.  (What is supposed to happen.)  For the final Experiment, we should be able to use the passportRunner.c program in order to run two passport offices simultaneously by Exec-ing the passportoffice.c program.  If we run the passport office with the same parameters for both instances, we expect that there will be twice as many clerks service customers, twice as many customers finish, and twice as many Managers manage.  However, the threads instantiated by each respective instance of passport office will keep to themselves even though they will be executing at the same time.  Thus we will have achieved two independent passport offices running at the same time.
