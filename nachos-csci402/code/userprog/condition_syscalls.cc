@@ -119,7 +119,7 @@ void Signal_sys(int lockIndex, int conditionIndex) {
 	// }
 	currentThread->space->userConds[conditionIndex].userCond->Signal(currentThread->space->userLocks[lockIndex].userLock); // acquire userlock at index
 
-	if (currentThread->space->userConds[conditionIndex].deleteFlag && 
+	if (currentThread->space->userConds[conditionIndex].deleteFlag &&
 		currentThread->space->userConds[conditionIndex].userCond->waitQueueIsEmpty()){
 		printf("    DestroyCondition::Condition  number %d, name %s is destroyed by %s \n", conditionIndex, currentThread->space->userConds[conditionIndex].userCond->getName(), currentThread->getName());
 		delete currentThread->space->userConds[conditionIndex].userCond;
@@ -180,7 +180,10 @@ void DestroyCondition_sys(int index) {
 		currentThread->space->userConds[index].deleteFlag = TRUE; // s
 		currentThread->space->condsLock->Release();
 		return;
+	}else{
+		currentThread->space->userConds[index].isDeleted = TRUE;
+		delete currentThread->space->userConds[index].userCond;
 	}
-	
+
 	currentThread->space->condsLock->Release();//release kernel lock
 }

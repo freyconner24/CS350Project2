@@ -20,13 +20,14 @@ void t1(){
 	Acquire(lock1);
 	for (i = 0; i < 50; ++i)
 		++check;
-	Write("t1 output should be 50 to show that there is no race condition in for loop 1-50\n", 80, ConsoleOutput);
+	Write("t1 output should be 50 or 60 to show that there is no race condition in for loop 1-50\n", 80, ConsoleOutput);
 	PrintNum(check);PrintNl();
 	Write("t1 releasing lock1\n", 19, ConsoleOutput);
 	Release(lock1);
 
 	Write("t1 acquiring lock2 and not releasing\n", 19, ConsoleOutput);
 	Acquire(lock2);
+	Release(lock2);
 	/* Write("t1 destroying lock1\n", 19, ConsoleOutput);
 	 DestroyLock(lock1);
 	 Write("t1 destroying lock1\n", 19, ConsoleOutput);
@@ -37,17 +38,18 @@ void t1(){
 void t2(){
 	Write("t2 acquiring lock1\n", 19, ConsoleOutput);
 	Acquire(lock1);
-	PrintString("t1 output should be 100 to show that there is no race condition in for loop\n", 76);
-	for ( i = 0; i < 1; ++i)
-		check*=2;
+	PrintString("t2 output should be 50 or 60 to show that there is no race condition in for loop\n", 76);
+	for ( i = 0; i < 10; ++i)
+		++check;
 	PrintNum(check); PrintNl();
 	Write("t2 releasing lock1\n", 19, ConsoleOutput);
-	/*Acquire(lock2);*/
+	Release(lock1);
+	Acquire(lock2);
+	Release(lock2);
 	Exit(0);
 }
 
 int main() {
-	lock1 = CreateLock(5, 5, 0);
   lock1 = CreateLock("Lock1", 5, 0);
 	lock2 = CreateLock("Lock2", 5, 0);
 	deadLock1 = CreateLock("deadLock1", 9, 0);
