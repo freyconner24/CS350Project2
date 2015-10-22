@@ -32,9 +32,7 @@ struct CustomerAttribute {
     int currentLine;
 };
 
-int globalThreadCount = 0;
 char threadNames[250][80];
-int currentThread = 0;
 int testChosen = 1; /* CL: indicate test number (1-7) or full program (0)*/
 int clerkCount = 0;  /* CL: number of total clerks of the 4 types that can be modified*/
 int customerCount = 0; /* CL: number of customers that can be modified*/
@@ -46,7 +44,6 @@ int prevTotalBoolCount = 0;
 int currentTotalBoolCount = 0;
 
 /* initialize locks and arrays for linecount, clerk, customer, manager, senator information*/
-int clerkIdMap[CLERK_NUMBER];
 int clerkLineLock;
 int clerkLineCount[CLERK_NUMBER]; /* CL: number of customers in a clerk's regular line*/
 int clerkBribeLineCount[CLERK_NUMBER]; /* CL: number of customers in a clerk's bribe line*/
@@ -66,7 +63,6 @@ int senatorLock;
 /* Condition* senatorCV = new Condition("SenatorCV");*/
 
 struct CustomerAttribute customerAttributes[CUSTOMER_NUMBER]; /* CL: customer attributes, accessed by custNumber*/
-int customerIdMap[CUSTOMER_NUMBER];
 int clerkMoney[CLERK_NUMBER] = {0}; /* CL: every clerk has no bribe money in the beginning*/
 /*Senator control variables*/
 int senatorLineCV;
@@ -186,10 +182,6 @@ void writeWithSize(char* string) {
     Write(string, size, ConsoleOutput);
 }
 
-char* currentThreadGetName(int currentThread) {
-    return threadNames[currentThread];
-}
-
 /* CL: parameter: an int array that contains numbers of each clerk type
      Summary: gets input from user or test, initialize and print out clerk numbers
      return value: void */
@@ -298,27 +290,6 @@ void createCustomerThreads() {
       PrintString("+++++Customer created with number: ", 35); PrintNum(i); PrintNl();
         Fork((VoidFunctionPtr)Customer, i);
     }
-
-    PrintString("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n", 38);
-    if(my_strcmp("test", "test", 4)) {
-        PrintString("test == test\n", 13);
-    } else {
-        PrintString("strcmp failed for (test == test)\n", 33);
-    }
-
-    if(!my_strcmp("test1", "test", 6)) {
-        PrintString("test1 != test\n", 14);
-    } else {
-        PrintString("strcmp failed for (tes1 != test)\n", 33);
-    }
-
-    if(!my_strcmp("test", "test2", 6)) {
-        PrintString("test != test2\n", 14);
-    } else {
-        PrintString("strcmp failed for (test != test2)\n", 34);
-    }
-
-    PrintString("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n", 38);
 }
 
 /*CL: Parameter: Thread*
@@ -327,7 +298,7 @@ void createCustomerThreads() {
 void createSenatorThreads(){
     int i;
     for(i = 0; i < senatorCount; i++){
-      PrintString("+++++Sena Created\n", 18); PrintNum(i);
+      PrintString("+++++Senator Created\n", 21); PrintNum(i + 50);
         Fork((VoidFunctionPtr)Senator, i + 50);
     }
 }
@@ -345,16 +316,16 @@ void createTestVariables(int countOfEachClerkType[]) {
 }
 
 void Part2() {
-    char *name;
     int countOfEachClerkType[CLERK_TYPES] = {0,0,0,0};
 
     PrintString("Starting Part 2\n", 16);
     PrintString("Test to run (put 0 for full program): ", 38);
     testChosen = 1; /* technically cin >> */
+    PrintNum(testChosen); PrintNl();
 
     if(testChosen == 1) {
         PrintString("Starting Test 1\n", 16); /*Customers always take the shortest line, but no 2 customers ever choose the same shortest line at the same time*/
-        customerCount = 1;
+        customerCount = 2;
         clerkCount = 4;
         senatorCount = 0;
         countOfEachClerkType[0] = 1; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 1; countOfEachClerkType[3] = 1;
@@ -475,7 +446,6 @@ int chooseCustomerFromLine(int myLine, char* clerkName, int clerkNameLength) {
                 clerkStates[myLine] = ONBREAK;
                 Release(clerkLineLock);
                 Wait(breakLock[myLine], breakCV[myLine]);
-                PrintString("breakLock[myLine]: ", 17);
                 PrintNum(breakLock[myLine]); PrintNl();
                 clerkStates[myLine] = AVAILABLE;
                 Release(breakLock[myLine]);
@@ -511,7 +481,7 @@ void clerkSignalsNextCustomer(int myLine) {
     Return value: void */
 
 void PrintCust(int isCustomer) {
-    if(isCustomer == 1) {
+    if(isCustomer) {
         PrintString("Customer_", 9);
     } else {
         PrintString("Senator_", 8);
@@ -538,12 +508,7 @@ void ApplicationClerk() {
     int myLine = GetThreadArgs();
     int i, numYields;
     char personName[50];
-    int currentThread = globalThreadCount;
     int isCustomer = 1, custNumber;
-
-    /*my_strcpy(threadNames[currentThread], concatStringWithNumber("ApplicationClerk_", myLine), 0); /* TODO: change 0 */
-    clerkIdMap[myLine] = currentThread;
-    ++globalThreadCount;
 
     while(true) {
         custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
@@ -585,14 +550,9 @@ void PictureClerk() {
     int myLine = GetThreadArgs();
     int i = 0, numYields, probability, isCustomer = 1;
     char personName[50];
-    int currentThread = globalThreadCount;
-    /* my_strcpy(threadNames[currentThread], concatStringWithNumber("PictureClerk_", currentThread), 0);*/
-    clerkIdMap[myLine] = currentThread;
-    ++globalThreadCount;
 
     while(true) {
         int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
-
         if(custNumber >= 50) {
             isCustomer = 0;
         } else {
@@ -644,10 +604,6 @@ void PassportClerk() {
     int myLine = GetThreadArgs();
     int numYields, clerkMessedUp, i, isCustomer = 1;
     char personName[50];
-    int currentThread = globalThreadCount;
-    /* my_strcpy(threadNames[currentThread], concatStringWithNumber("PassportClerk_", currentThread), 0);*/
-    clerkIdMap[myLine] = currentThread;
-    ++globalThreadCount;
 
     while(true) {
         int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
@@ -704,10 +660,6 @@ void Cashier() {
     int myLine = GetThreadArgs();
     int numYields, clerkMessedUp, i;
     char personName[50], isCustomer = 1;
-    int currentThread = globalThreadCount;
-    /* my_strcpy(threadNames[currentThread], concatStringWithNumber("Cashier_", currentThread), 0);*/
-    clerkIdMap[myLine] = currentThread;
-    ++globalThreadCount;
 
     while(true) {
         int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
@@ -775,10 +727,6 @@ void Customer() {
     int pickedPicture;
     int totalLineCount;
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: Creating a CustomerAttribute for each new customer*/
-    int currentThread = globalThreadCount;
-    /* my_strcpy(threadNames[currentThread], concatStringWithNumber("Customer_", custNumber), 0);*/
-    customerIdMap[custNumber] = currentThread;
-    ++globalThreadCount;
 
     customerAttributes[custNumber] = myCustAtt;
     while(!customerAttributes[custNumber].isDone) {
@@ -815,7 +763,6 @@ void Customer() {
                 !customerAttributes[custNumber].hasCertification &&
                 !customerAttributes[custNumber].isDone &&
                 my_strcmp(clerkTypes[i], "ApplicationClerk", clerkTypesLengths[i])) {
-                PrintString("------------------Selecting ApplicationClerk: ", 46); PrintNl();
                 if(totalLineCount < lineSize) {
                     myLine = i;
                     lineSize = totalLineCount;
@@ -825,9 +772,7 @@ void Customer() {
                       !customerAttributes[custNumber].hasCertification &&
                       !customerAttributes[custNumber].isDone &&
                       my_strcmp(clerkTypes[i], "PictureClerk", clerkTypesLengths[i])) {
-                PrintString("------------------Selecting PictureClerk: ", 42); PrintNum(i); PrintNl();
                 if(totalLineCount < lineSize) {
-                    PrintString("Update myLine: ", 15); PrintNum(i); PrintNl();
                     myLine = i;
                     lineSize = totalLineCount;
                 }
@@ -922,11 +867,6 @@ void Senator(){
     int custNumber = GetThreadArgs();
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: custNumber == 50 to 59*/
     int i, myLine;
-    int currentThread = globalThreadCount;
-    /* my_strcpy(threadNames[currentThread], concatStringWithNumber("Senator_", custNumber), 0);*/
-    customerIdMap[custNumber] = currentThread;
-    ++globalThreadCount;
-
     customerAttributes[custNumber] = myCustAtt;
 
     Acquire(senatorLock);
@@ -1098,9 +1038,6 @@ void printMoney() {
 
 void Manager() {
     int totalLineCount, i, waitTime;
-    int currentThread = globalThreadCount;
-    /* my_strcpy(threadNames[currentThread], "Manager", 7);*/
-    ++globalThreadCount;
 
     do {
         /* IntStatus oldLevel = interrupt->SetLevel(IntOff); disable interrupts*/
@@ -1167,18 +1104,6 @@ int main() {
     senatorLock = CreateLock("SenatorLock", 12, 0);
     senatorLineCV = CreateCondition("SenatorLineCV", 13, 0);
     Part2();
-    /*Write("Testing Locks\n", 14, ConsoleOutput);
-
-    lockNum = CreateLock("nameLock");
-    Acquire(lockNum);
-    condNum = CreateCondition("someCondition");
-    Signal(lockNum, condNum);
-    Broadcast(lockNum, condNum);
-    Release(lockNum);
-    DestroyLock(lockNum);
-    Write("Locks complete\n", 15, ConsoleOutput);
-    */
-/*      Exec('halt');*/
 
     Exit(0);
 }

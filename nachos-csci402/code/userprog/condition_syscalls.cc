@@ -11,14 +11,17 @@
 int CreateCondition_sys(int vaddr, int size, int appendNum) {
 	currentThread->space->condsLock->Acquire(); //CL: acquire kernelLock so that no other thread is running on kernel mode
 	if (currentThread->space->condCount == MAX_COND_COUNT){
+		printf("    CreateCondition::");
 		printf(currentThread->getName());
-		printf("    CreateCondition::has too many conditions!\n");
+		printf(" has too many conditions!\n");
 		currentThread->space->condsLock->Release();
 		return -1;
 	}
 
 	if(size < 0 || size > 32) {
-		printf("    CreateCondition::Size must be: (size < 0 || size > 32) ? %d\n", size);
+		printf("    CreateCondition::");
+		printf(currentThread->getName());
+		printf(" size must be: (size < 0 || size > 32) ? %d\n", size);
 		currentThread->space->condsLock->Release();
 		return -1;
 	}
@@ -57,10 +60,10 @@ void Wait_sys(int lockIndex, int conditionIndex) {
 		currentThread->space->condsLock->Release();
 		return;
 	}
-	printf("    LockIndex: %d\n", lockIndex);
-	printf("    LockCount: %d\n", currentThread->space->lockCount);
-	printf("    ConditionIndex: %d\n", conditionIndex);
-	printf("    ConditionCount: %d\n", currentThread->space->condCount);
+	// printf("    LockIndex: %d\n", lockIndex);
+	// printf("    LockCount: %d\n", currentThread->space->lockCount);
+	// printf("    ConditionIndex: %d\n", conditionIndex);
+	// printf("    ConditionCount: %d\n", currentThread->space->condCount);
 	if (lockIndex < 0 || lockIndex >= currentThread->space->lockCount){
 		printf("    Wait::invalid lock\n");
 		currentThread->space->condsLock->Release();
