@@ -325,10 +325,10 @@ void Part2() {
 
     if(testChosen == 1) {
         PrintString("Starting Test 1\n", 16); /*Customers always take the shortest line, but no 2 customers ever choose the same shortest line at the same time*/
-        customerCount = 2;
-        clerkCount = 4;
+        customerCount = 20;
+        clerkCount = 6;
         senatorCount = 0;
-        countOfEachClerkType[0] = 1; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 1; countOfEachClerkType[3] = 1;
+        countOfEachClerkType[0] = 1; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 2; countOfEachClerkType[3] = 2;
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 2) {
@@ -489,9 +489,9 @@ void PrintCust(int isCustomer) {
 }
 
 void hasSignaledString(int isCustomer, char* threadName, int threadNameLength, int clerkNum, int custNumber) {
-    PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled a ", 17);
+    PrintString(threadName, threadNameLength); PrintNum(clerkNum); PrintString(" has signalled ", 15);
     PrintCust(isCustomer); PrintNum(custNumber); PrintString(" to come to their counter. (", 28);
-    PrintCust(isCustomer); PrintNum(custNumber); PrintNl();
+    PrintCust(isCustomer); PrintNum(custNumber); PrintString(")", 1); PrintNl();
 }
 
 void givenSSNString(int isCustomer, int custNumber, char* threadName, int threadNameLength, int clerkNum) {
@@ -1102,7 +1102,7 @@ int main() {
     outsideLineCV = CreateCondition("OutsideLineCV", 14, 0);
     outsideLock = CreateLock("OutsideLock", 12, 0);
     senatorLock = CreateLock("SenatorLock", 12, 0);
-    senatorLineCV = CreateCondition("SenatorLineCV", 13, 0);
+    senatorLineCV = CreateCondition("SenatorLineCV", 13, 0);    
     Part2();
 
     Exit(0);
