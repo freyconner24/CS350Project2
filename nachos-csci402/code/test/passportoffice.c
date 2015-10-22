@@ -115,6 +115,25 @@ char* reverse_str(char* string) {
     return string;
 }
 
+int my_strcmp(char s1[], const char s2[], int len) {
+    int i = 0;
+    for(i = 0; i < len; ++i) {
+        if(s1[i] == '\0') {
+            return false;
+        }
+
+        if(s2[i] == '\0') {
+            return false;
+        }
+
+        if(s1[i] != s2[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 char* int_to_str(int num) {
     char* numStr;
     int size = 0;
@@ -230,7 +249,7 @@ void createClerkThreads() {
             }
         } else { /* i == 3 */
             for(j = 0; j < clerkArray[clerkType]; ++j) {
-                clerkTypeLength = 8;
+                clerkTypeLength = 7;
                 my_strcpy(clerkTypes[clerkNumber], "Cashier", clerkTypeLength + 1);
                 clerkTypesLengths[clerkNumber] = clerkTypeLength;
                 Fork((VoidFunctionPtr)Cashier,clerkNumber);
@@ -274,10 +293,32 @@ void createClerkLocksAndConditions() {
     Return value: void*/
 void createCustomerThreads() {
     int i;
+    int test = 0;
     for(i = 0; i < customerCount; i++){
       PrintString("+++++Customer created with number: ", 35); PrintNum(i); PrintNl();
         Fork((VoidFunctionPtr)Customer, i);
     }
+
+    PrintString("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n", 38);
+    if(my_strcmp("test", "test", 4)) {
+        PrintString("test == test\n", 13);
+    } else {
+        PrintString("strcmp failed for (test == test)\n", 33);
+    }
+
+    if(!my_strcmp("test1", "test", 6)) {
+        PrintString("test1 != test\n", 14);
+    } else {
+        PrintString("strcmp failed for (tes1 != test)\n", 33);
+    }
+
+    if(!my_strcmp("test", "test2", 6)) {
+        PrintString("test != test2\n", 14);
+    } else {
+        PrintString("strcmp failed for (test != test2)\n", 34);
+    }
+
+    PrintString("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n", 38);
 }
 
 /*CL: Parameter: Thread*
@@ -574,7 +615,7 @@ void PictureClerk() {
             probability = Rand(100, 0);
             if(probability >= 25) {
                 customerAttributes[custNumber].likesPicture = true;
-                PrintCust(isCustomer); PrintNum(custNumber);  PrintString(" does like their picture from ", 30); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
+                PrintCust(isCustomer); PrintNum(custNumber);  PrintString(" likes their picture from ", 26); PrintString("PictureClerk_", 13); PrintNum(myLine); PrintNl();
                 Yield();
                 PrintString("PictureClerk_", 13); PrintNum(myLine); PrintString(" has been told that ", 20); PrintCust(isCustomer); PrintNum(custNumber); PrintString(" does like their picture\n", 25);
                 /* CL: random time for pictureclerk to process data */
@@ -706,8 +747,8 @@ void Cashier() {
                 PrintString(". Sending customer to back of line.\n", 36);
                 customerAttributes[custNumber].clerkMessedUp = true; /* TODO: customer uses this to know which back line to go to*/
             } else {
-                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has provided ", 11);
-                PrintCust(isCustomer); PrintNum(custNumber); PrintString("their completed passport\n", 25);
+                PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has provided ", 14);
+                PrintCust(isCustomer); PrintNum(custNumber); PrintString(" their completed passport\n", 26);
                 Yield();
                 PrintString("Cashier_", 8); PrintNum(myLine); PrintString(" has recorded that ", 19);
                 PrintCust(isCustomer); PrintNum(custNumber); PrintString(" has been given their completed passport\n", 41);
@@ -748,10 +789,20 @@ void Customer() {
         }
         Acquire(clerkLineLock); /* CL: acquire lock so that only this customer can access and get into the lines*/
 
+        bribe = false;
+        myLine = -1;
+        lineSize = 1000;
+
         if(!customerAttributes[custNumber].applicationIsFiled && !customerAttributes[custNumber].likesPicture) { /* check conditions if application and picture are done*/
             pickedApplication = Rand(2, 0);
             pickedPicture = !pickedApplication;
+            PrintString("------------------pickedApplication: ", 37); PrintNum(pickedApplication); PrintNl();
+            PrintString("------------------applicationIsFiled: ", 38); PrintNum(customerAttributes[custNumber].applicationIsFiled); PrintNl();
+            PrintString("------------------likesPicture: ", 32); PrintNum(customerAttributes[custNumber].likesPicture); PrintNl();
+            PrintString("------------------pickedPicture: ", 33); PrintNum(pickedPicture); PrintNl();
         } else {
+            PrintString("------------------applicationIsFiled: ", 38); PrintNum(customerAttributes[custNumber].applicationIsFiled); PrintNl();
+            PrintString("------------------likesPicture: ", 32); PrintNum(customerAttributes[custNumber].likesPicture); PrintNl();
             pickedApplication = true;
             pickedPicture = true;
         }
@@ -762,27 +813,29 @@ void Customer() {
             if(pickedApplication &&
                 !customerAttributes[custNumber].applicationIsFiled &&
                 !customerAttributes[custNumber].hasCertification &&
-                !customerAttributes[custNumber].isDone/* &&
-                clerkTypes[i] == "ApplicationClerk"*/) {
-
-                if(totalLineCount < lineSize ) {
+                !customerAttributes[custNumber].isDone &&
+                my_strcmp(clerkTypes[i], "ApplicationClerk", clerkTypesLengths[i])) {
+                PrintString("------------------Selecting ApplicationClerk: ", 46); PrintNl();
+                if(totalLineCount < lineSize) {
                     myLine = i;
                     lineSize = totalLineCount;
                 }
             } else if(pickedPicture &&
                       !customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone/* &&
-                      clerkTypes[i] == "PictureClerk"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      my_strcmp(clerkTypes[i], "PictureClerk", clerkTypesLengths[i])) {
+                PrintString("------------------Selecting PictureClerk: ", 42); PrintNum(i); PrintNl();
                 if(totalLineCount < lineSize) {
+                    PrintString("Update myLine: ", 15); PrintNum(i); PrintNl();
                     myLine = i;
                     lineSize = totalLineCount;
                 }
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone/* &&
-                      clerkTypes[i] == "PassportClerk"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      my_strcmp(clerkTypes[i], "PassportClerk", clerkTypesLengths[i])) {
                 if(totalLineCount < lineSize) {
                     myLine = i;
                     lineSize = totalLineCount;
@@ -790,8 +843,8 @@ void Customer() {
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone/* &&
-                      clerkTypes[i] == "Cashier"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      my_strcmp(clerkTypes[i], "Cashier", clerkTypesLengths[i])) {
                 if(totalLineCount < lineSize) {
                     myLine = i;
                     lineSize = totalLineCount;
@@ -799,6 +852,7 @@ void Customer() {
             }
         }
 
+        PrintString("------------------myLine: ", 26); PrintNum(myLine); PrintNl();
         if(clerkStates[myLine] != AVAILABLE ) { /*clerkStates[myLine] == BUSY*/
             /*I must wait in line*/
             if(customerAttributes[custNumber].money > 100){
@@ -811,7 +865,7 @@ void Customer() {
                 bribe = true;
                 Wait(clerkLineLock, clerkBribeLineCV[myLine]);
             } else {
-                PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" has gotten in regular line for ", 19);
+                PrintString("Customer_", 9); PrintNum(custNumber); PrintString(" has gotten in regular line for ", 32);
                 PrintString(clerkTypes[myLine], clerkTypesLengths[myLine]); PrintString("_", 1); PrintNum(myLine); PrintNl();
                 clerkLineCount[myLine]++;
                 Wait(clerkLineLock, clerkLineCV[myLine]);
@@ -919,29 +973,29 @@ void Senator(){
             if(!customerAttributes[custNumber].applicationIsFiled &&
                 /*customerAttributes[custNumber].likesPicture &&*/
                 !customerAttributes[custNumber].hasCertification &&
-                !customerAttributes[custNumber].isDone /*&&
-                clerkTypes[i] == "ApplicationClerk"*/) {
+                !customerAttributes[custNumber].isDone &&
+                my_strcmp(clerkTypes[i], "ApplicationClerk", clerkTypesLengths[i])) {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: ApplicationClerk chosen\n", 28);
                 myLine = i;
             } else if(/*customerAttributes[custNumber].applicationIsFiled &&*/
                       !customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone /*&&
-                      clerkTypes[i] == "PictureClerk"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      my_strcmp(clerkTypes[i], "PictureClerk", clerkTypesLengths[i])) {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: PictureClerk chosen\n", 24);
                 myLine = i;
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       !customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone /*&&
-                      clerkTypes[i] == "PassportClerk"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      my_strcmp(clerkTypes[i], "PassportClerk", clerkTypesLengths[i])) {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: PassportClerk chosen\n", 25);
                 myLine = i;
             } else if(customerAttributes[custNumber].applicationIsFiled &&
                       customerAttributes[custNumber].likesPicture &&
                       customerAttributes[custNumber].hasCertification &&
-                      !customerAttributes[custNumber].isDone /*&&
-                      clerkTypes[i] == "Cashier"*/) {
+                      !customerAttributes[custNumber].isDone &&
+                      my_strcmp(clerkTypes[i], "Cashier", clerkTypesLengths[i])) {
                 PrintString("    ", 4); PrintString("Senator_", 8); PrintNum(custNumber); PrintString("::: Cashier chosen\n", 19);
                 myLine = i;
             }
@@ -1047,7 +1101,6 @@ void Manager() {
     int currentThread = globalThreadCount;
     /* my_strcpy(threadNames[currentThread], "Manager", 7);*/
     ++globalThreadCount;
-        PrintString("in manager\n", 11);
 
     do {
         /* IntStatus oldLevel = interrupt->SetLevel(IntOff); disable interrupts*/
@@ -1062,13 +1115,11 @@ void Manager() {
         printMoney();
         /* (void) interrupt->SetLevel(oldLevel); /*restore interrupts*/
 
-        waitTime = 100000;
+        waitTime = 100;
         for(i = 0; i < waitTime; ++i) {
             Yield();
         }
-        PrintString("End of manager in while loop\n", 29);
     } while(!customersAreAllDone());
-    PrintString("Exited manager\n", 15);
     Exit(0);
 }
 

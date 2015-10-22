@@ -21,9 +21,10 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
-// in test::: setenv PATH ../gnu/:$PATH
-// cd ../test/; setenv PATH ../gnu/:$PATH; cd ../userprog/
-// in userprog::: nachos -x ../test/testfiles
+// $ setenv PATH ../gnu/:$PATH
+// $ cd ../test/; setenv PATH ../gnu/:$PATH; cd ../userprog/
+// $ cd ../test/; gmake; cd ../userprog/;
+// $ nachos -x ../test/testfiles
 
 
 #include "copyright.h"
