@@ -32,6 +32,7 @@ struct CustomerAttribute {
     int currentLine;
 };
 
+int allCustomersAreDone = 0;
 char threadNames[250][80];
 int testChosen = 1; /* CL: indicate test number (1-7) or full program (0)*/
 int clerkCount = 0;  /* CL: number of total clerks of the 4 types that can be modified*/
@@ -325,10 +326,10 @@ void Part2() {
 
     if(testChosen == 1) {
         PrintString("Starting Test 1\n", 16); /*Customers always take the shortest line, but no 2 customers ever choose the same shortest line at the same time*/
-        customerCount = 20;
-        clerkCount = 6;
+        customerCount = 5;
+        clerkCount = 4;
         senatorCount = 0;
-        countOfEachClerkType[0] = 1; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 2; countOfEachClerkType[3] = 2;
+        countOfEachClerkType[0] = 1; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 1; countOfEachClerkType[3] = 1;
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 2) {
@@ -449,6 +450,9 @@ int chooseCustomerFromLine(int myLine, char* clerkName, int clerkNameLength) {
                 PrintNum(breakLock[myLine]); PrintNl();
                 clerkStates[myLine] = AVAILABLE;
                 Release(breakLock[myLine]);
+                if(allCustomersAreDone) {
+                    Exit(0);
+                }
             }
         }
     } while(clerkStates[myLine] != BUSY);
@@ -510,7 +514,7 @@ void ApplicationClerk() {
     char personName[50];
     int isCustomer = 1, custNumber;
 
-    while(true) {
+    while(!allCustomersAreDone) {
         custNumber = chooseCustomerFromLine(myLine, "ApplicationClerk_", 17);
         if(custNumber >= 50) {
             isCustomer = 0;
@@ -551,7 +555,7 @@ void PictureClerk() {
     int i = 0, numYields, probability, isCustomer = 1;
     char personName[50];
 
-    while(true) {
+    while(!allCustomersAreDone) {
         int custNumber = chooseCustomerFromLine(myLine, "PictureClerk_", 13);
         if(custNumber >= 50) {
             isCustomer = 0;
@@ -605,7 +609,7 @@ void PassportClerk() {
     int numYields, clerkMessedUp, i, isCustomer = 1;
     char personName[50];
 
-    while(true) {
+    while(!allCustomersAreDone) {
         int custNumber = chooseCustomerFromLine(myLine, "PassportClerk_", 14);
         if(custNumber >= 50) {
             isCustomer = 0;
@@ -661,7 +665,7 @@ void Cashier() {
     int numYields, clerkMessedUp, i;
     char personName[50], isCustomer = 1;
 
-    while(true) {
+    while(!allCustomersAreDone) {
         int custNumber = chooseCustomerFromLine(myLine, "Cashier_", 8);
         if(custNumber >= 50) {
             isCustomer = 0;
@@ -1057,6 +1061,8 @@ void Manager() {
             Yield();
         }
     } while(!customersAreAllDone());
+    allCustomersAreDone = true;
+    wakeUpClerks();
     Exit(0);
 }
 
