@@ -24,7 +24,9 @@ int CreateLock_sys(int vaddr, int size, int appendNum) {
 		return -1;
 	}
 	char* buffer = new char[size + 1];
+	char* empty = new char[size + 1];
 	buffer[size] = '\0'; //end the char array with a null character
+	empty[size] = '\0';
 
 	if (copyin(vaddr, size, buffer) == -1){
 		printf("%s"," COPYIN FAILED\n");
@@ -108,7 +110,7 @@ void Release_sys(int index) {
 		currentThread->space->userLocks[index].userLock->lockStatus == currentThread->space->userLocks[index].userLock->FREE) {
 		printf("    Release::Lock number: %d || name: %s is destroyed by %s\n", index, currentThread->space->userLocks[index].userLock->getName(), currentThread->getName());
 		currentThread->space->userLocks[index].isDeleted = TRUE;
-		delete currentThread->space->userLocks[index].userLock;	
+		delete currentThread->space->userLocks[index].userLock;
 	}
 }
 

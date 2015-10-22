@@ -42,11 +42,12 @@ void t2(){
 		check*=2;
 	PrintNum(check); PrintNl();
 	Write("t2 releasing lock1\n", 19, ConsoleOutput);
-	Acquire(lock2);
+	/*Acquire(lock2);*/
 	Exit(0);
 }
 
 int main() {
+	lock1 = CreateLock(5, 5, 0);
   lock1 = CreateLock("Lock1", 5, 0);
 	lock2 = CreateLock("Lock2", 5, 0);
 	deadLock1 = CreateLock("deadLock1", 9, 0);
