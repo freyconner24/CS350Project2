@@ -228,7 +228,6 @@ void createClerkLocksAndConditions() {
     Return value: void*/
 void createCustomerThreads() {
     int i;
-    int test = 0;
     for(i = 0; i < customerCount; i++){
       PrintString("+++++Customer created with number: ", 35); PrintNum(i); PrintNl();
         Fork((VoidFunctionPtr)Customer, i);
@@ -241,7 +240,7 @@ void createCustomerThreads() {
 void createSenatorThreads(){
     int i;
     for(i = 0; i < senatorCount; i++){
-      PrintString("+++++Senator Created\n", 21); PrintNum(i + 50);
+      PrintString("+++++Senator Created\n", 21); PrintNum(i + 50); PrintNl();
         Fork((VoidFunctionPtr)Senator, i + 50);
     }
 }
@@ -268,10 +267,10 @@ void Part2() {
 
     if(testChosen == 1) {
         PrintString("Starting Test 1\n", 16); /*Customers always take the shortest line, but no 2 customers ever choose the same shortest line at the same time*/
-        customerCount = 5;
-        clerkCount = 4;
+        customerCount = 20;
+        clerkCount = 6;
         senatorCount = 0;
-        countOfEachClerkType[0] = 1; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 1; countOfEachClerkType[3] = 1;
+        countOfEachClerkType[0] = 2; countOfEachClerkType[1] = 1; countOfEachClerkType[2] = 1; countOfEachClerkType[3] = 2;
 
         createTestVariables(countOfEachClerkType);
     } else if(testChosen == 2) {
@@ -690,13 +689,7 @@ void Customer() {
         if(!customerAttributes[custNumber].applicationIsFiled && !customerAttributes[custNumber].likesPicture) { /* check conditions if application and picture are done*/
             pickedApplication = Rand(2, 0);
             pickedPicture = !pickedApplication;
-            PrintString("------------------pickedApplication: ", 37); PrintNum(pickedApplication); PrintNl();
-            PrintString("------------------applicationIsFiled: ", 38); PrintNum(customerAttributes[custNumber].applicationIsFiled); PrintNl();
-            PrintString("------------------likesPicture: ", 32); PrintNum(customerAttributes[custNumber].likesPicture); PrintNl();
-            PrintString("------------------pickedPicture: ", 33); PrintNum(pickedPicture); PrintNl();
         } else {
-            PrintString("------------------applicationIsFiled: ", 38); PrintNum(customerAttributes[custNumber].applicationIsFiled); PrintNl();
-            PrintString("------------------likesPicture: ", 32); PrintNum(customerAttributes[custNumber].likesPicture); PrintNl();
             pickedApplication = true;
             pickedPicture = true;
         }
@@ -811,6 +804,7 @@ void Customer() {
 
 void Senator(){
     int custNumber = GetThreadArgs();
+
     struct CustomerAttribute myCustAtt = initCustAttr(custNumber); /*Hung: custNumber == 50 to 59*/
     int i, myLine;
     customerAttributes[custNumber] = myCustAtt;
@@ -916,7 +910,7 @@ void Senator(){
             Release(clerkSenatorCVLock[i]);
         }
         Acquire(outsideLock);
-        Broadcast(outsideLineCV, outsideLock);
+        Broadcast(outsideLock, outsideLineCV);
         Release(outsideLock);
         Release(senatorLock);
     }else{
@@ -987,6 +981,7 @@ void Manager() {
 
     do {
         /* IntStatus oldLevel = interrupt->SetLevel(IntOff); disable interrupts*/
+        Acquire(outsideLock);
         totalLineCount = 0;
         for(i = 0; i < clerkCount; ++i) {
             totalLineCount += clerkLineCount[i] + clerkBribeLineCount[i];
@@ -997,7 +992,7 @@ void Manager() {
         }
         printMoney();
         /* (void) interrupt->SetLevel(oldLevel); /*restore interrupts*/
-
+        Release(outsideLock);
         waitTime = 100;
         for(i = 0; i < waitTime; ++i) {
             Yield();
