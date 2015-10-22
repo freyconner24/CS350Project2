@@ -126,7 +126,6 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
   locksLock = new Lock("LocksLock");
   userLocks = new UserLock[MAX_LOCK_COUNT];
   userConds = new UserCond[MAX_COND_COUNT];
-    //processTable->runningProcessCount++;
     NoffHeader noffH;
     unsigned int i, size;
     threadCount = 1;
@@ -141,12 +140,9 @@ AddrSpace::AddrSpace(OpenFile *executable) : fileTable(MaxOpenFiles) {
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size ;
-    cout << "AddrSpace::AddrSpace() sizeOfExecutable: " << size << endl;
     numPages = divRoundUp(size, PageSize) + divRoundUp(UserStackSize,PageSize);
-    cout << "AddrSpace::AddrSpace() numPages: " << numPages << endl;
-
-                                                    // we need to increase the size
-						// to leave room for the stack
+    // we need to increase the size
+		// to leave room for the stack
     //size = numPages * PageSize;
 
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
@@ -294,10 +290,7 @@ void AddrSpace::RestoreState()
 }
 
 int AddrSpace::NewPageTable(){
-    //TODO: pageTable lock;
-
     pageTableLock->Acquire();
-    //threadCount++;
     cout << "Creating new pagetable for currentThread: " << currentThread->getName() << endl;
     TranslationEntry* newTable = new TranslationEntry [numPages+8];
     for (unsigned int i = 0; i < numPages; i++) {
@@ -341,16 +334,13 @@ int AddrSpace::NewPageTable(){
 }
 
 void AddrSpace::DeleteCurrentThread(){
-  IntStatus oldLevel = interrupt->SetLevel(IntOff);
-
-  //pageTableLock->Acquire();
+  //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+  pageTableLock->Acquire();
   --threadCount;
   int stackLocation = processTable->processEntries[processId]->stackLocations[currentThread->id];
-  cout << "In DeleteCurrentThread, stackLocation: " << stackLocation << endl;
-for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 's gonna be 8 for ass2
+  //cout << "In DeleteCurrentThread, stackLocation: " << stackLocation << endl;
+  for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 's gonna be 8 for ass2
     //Return physical page
-
-    //cout << "Clearing pagetable entry physical, index" << pageTable[stackLocation+i].physicalPage << " " << stackLocation+i << endl;
     bitmap->Clear(pageTable[stackLocation + i].physicalPage);
     pageTable[stackLocation + i].physicalPage = -1;
     pageTable[stackLocation + i].valid = FALSE;
@@ -360,11 +350,8 @@ for (int i = 0; i < UserStackSize / PageSize; ++i){ // UserStackSize / PageSize 
     //machine->WriteRegister(StackReg, numPages * PageSize - 16);
 
   }
-  //pageTableLock->Release();
-  interrupt->SetLevel(oldLevel);
-
-
-
+  //interrupt->SetLevel(oldLevel);
+  pageTableLock->Release();
 }
 
 void AddrSpace::PrintPageTable(){

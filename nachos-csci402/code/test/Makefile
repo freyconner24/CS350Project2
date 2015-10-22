@@ -31,7 +31,7 @@ CPP = $(GCCDIR)cpp
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt matmult sort testfiles exectests passportoffice locktest condtest passportRunner
+all: halt matmult sort testfiles exectests forktests passportoffice locktest condtest
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -68,18 +68,18 @@ exectests: exectests.o start.o
 		$(LD) $(LDFLAGS) start.o exectests.o -o exectests.coff
 		../bin/coff2noff exectests.coff exectests
 
+forktests.o: forktests.c
+				$(CC) $(CFLAGS) -c forktests.c
+forktests: forktests.o start.o
+				$(LD) $(LDFLAGS) start.o forktests.o -o forktests.coff
+				../bin/coff2noff forktests.coff forktests
+
 
 passportoffice.o: passportoffice.c
 				$(CC) $(CFLAGS) -c passportoffice.c
 passportoffice: passportoffice.o start.o
 				$(LD) $(LDFLAGS) start.o passportoffice.o -o passportoffice.coff
 				../bin/coff2noff passportoffice.coff passportoffice
-
-passportRunner.o: passportRunner.c
-				$(CC) $(CFLAGS) -c passportRunner.c
-passportRunner: passportRunner.o start.o
-				$(LD) $(LDFLAGS) start.o passportRunner.o -o passportRunner.coff
-				../bin/coff2noff passportRunner.coff passportRunner
 
 locktest.o: locktest.c
 				$(CC) $(CFLAGS) -c locktest.c

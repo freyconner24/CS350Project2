@@ -18,7 +18,8 @@ int main(){
 	/*Testing that these two threads fork */
 	Fork(helloWorld, 0);
 	Fork(helloWorld, 0);
-	Fork(helloWorld, "awd");
+
+	Fork(helloWorld, "awdaw");
 	/*Testing that threads can access the same variables in the process*/
 	Fork(addOneAndPrintNumber, 0);
 	Fork(addOneAndPrintNumber, 0);
