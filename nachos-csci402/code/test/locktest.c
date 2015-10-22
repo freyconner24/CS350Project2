@@ -20,7 +20,7 @@ void t1(){
 	Acquire(lock1);
 	for (i = 0; i < 50; ++i)
 		++check;
-	Write("t1 output should be 50 or 60 to show that there is no race condition in for loop 1-50\n", 86, ConsoleOutput);
+	Write("t1 final output should be 60 to show that there is no race condition in for loop 1-50\n", 86, ConsoleOutput);
 	PrintNum(check);PrintNl();
 	Write("t1 releasing lock1\n", 19, ConsoleOutput);
 	Release(lock1);
@@ -38,7 +38,7 @@ void t1(){
 void t2(){
 	Write("t2 acquiring lock1\n", 19, ConsoleOutput);
 	Acquire(lock1);
-	PrintString("t2 output should be 50 or 60 to show that there is no race condition in for loop\n", 81);
+	PrintString("t2 final output should be 60 to show that there is no race condition in for loop 1-10\n", 86);
 	for ( i = 0; i < 10; ++i)
 		++check;
 	PrintNum(check); PrintNl();
