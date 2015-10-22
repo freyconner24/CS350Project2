@@ -97,21 +97,6 @@ struct CustomerAttribute initCustAttr(int ssn) {
     return ca;
 }
 
-char* reverse_str(char* string) {
-    int size = 0, i = 0, temp;
-    while(*string != '\0') {
-        size++;
-    }
-
-    for(i = 0; i < size / 2; ++i) {
-        temp = string[i];
-        string[i] = string[size - i - 1];
-        string[size - i - 1] = temp;
-    }
-
-    return string;
-}
-
 int my_strcmp(char s1[], const char s2[], int len) {
     int i = 0;
     for(i = 0; i < len; ++i) {
@@ -131,31 +116,6 @@ int my_strcmp(char s1[], const char s2[], int len) {
     return true;
 }
 
-char* int_to_str(int num) {
-    char* numStr;
-    int size = 0;
-    int smallNum;
-
-    while(num != 0) {
-        smallNum = num % 10;
-        *numStr = (char)(smallNum + '0');
-        num /= 10;
-        numStr++;
-    }
-
-    return reverse_str(numStr);
-}
-
-char* my_strcat(char *dest, const char *src) {
-    char *rdest = dest;
-
-    while (*dest)
-      dest++;
-    while (*dest++ = *src++)
-      ;
-    return rdest;
-}
-
 char* my_strcpy(char s1[], const char s2[], int len) {
     int i = 0;
     for(i = 0; i < len - 1; ++i) {
@@ -163,24 +123,6 @@ char* my_strcpy(char s1[], const char s2[], int len) {
     }
     s1[len] = '\0';
     return (s1);
-}
-
-char* concatClerkNameWithNumber(char* clerkName, int clerkNumber) {
-    char* clerkNumStr = int_to_str(clerkNumber);
-    return my_strcat(my_strcat(clerkName, "_"), clerkNumStr);
-}
-
-char* concatStringWithNumber(char* str, int num) {
-    char* numStr = int_to_str(num);
-    return my_strcat(str, numStr);
-}
-
-void writeWithSize(char* string) {
-    int size = 0;
-    while(string[size] != '\0') {
-        ++size;
-    }
-    Write(string, size, ConsoleOutput);
 }
 
 /* CL: parameter: an int array that contains numbers of each clerk type
